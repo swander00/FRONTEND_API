@@ -66,7 +66,7 @@ export function PropertyCardImage({
       {/* Top Left - Badges */}
       <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
         <MlsStatusBadge status={property.status ?? 'Active'} />
-        <PropertyTypeBadge type={property.propertySubType ?? 'Property'} />
+        <PropertyTypeBadge type={property.propertyType ?? 'Property'} />
       </div>
 
       {/* Top Right - Favorite */}
