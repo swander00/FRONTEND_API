@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ResultsSummary } from '@/components/results/ResultsSummary';
 import { ViewOptions } from '@/components/results/ViewOptions';
+import { Pagination } from '@/components/results/Pagination';
 import { PropertyGrid } from '@/components/property/PropertyGrid';
 import { MapView } from '@/components/property/MapView';
 import { PropertyDetailsModal, PropertyDetailsModalMobile } from '@/components/property/PropertyDetails';
@@ -32,7 +33,7 @@ export default function SearchPage() {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   // Fetch properties from Railway API with filters, sort, and search (for grid view)
-  const { properties: gridProperties, loading: gridLoading, error: gridError, total: gridTotal } = useProperties({
+  const { properties: gridProperties, loading: gridLoading, error: gridError, total: gridTotal, totalPages: gridTotalPages } = useProperties({
     page: currentPage,
     pageSize: 24,
     enabled: view === 'grid',
@@ -53,11 +54,19 @@ export default function SearchPage() {
   const loading = view === 'map' ? mapLoading : gridLoading;
   const error = view === 'map' ? mapError : gridError;
   const total = view === 'map' ? mapTotal : gridTotal;
+  const totalPages = view === 'grid' ? gridTotalPages : 0;
 
   // Reset to page 1 when filters, sort, or search change
   useEffect(() => {
     setCurrentPage(1);
   }, [filtersSnapshot, sortBy, appliedSearchTerm]);
+
+  // Scroll to top when page changes (for better UX)
+  useEffect(() => {
+    if (currentPage > 1 && view === 'grid') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentPage, view]);
 
   const handleSaveSearch = () => {
     // TODO: Implement save search functionality
@@ -159,10 +168,21 @@ export default function SearchPage() {
         {!loading && !error && (
           <>
             {view === 'grid' ? (
-              <PropertyGrid
-                properties={filteredProperties}
-                onPropertyClick={handlePropertyClick}
-              />
+              <>
+                <PropertyGrid
+                  properties={filteredProperties}
+                  onPropertyClick={handlePropertyClick}
+                />
+                {totalPages > 1 && (
+                  <div className="mt-8 mb-6">
+                    <Pagination
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
+              </>
             ) : (
               <MapView
                 properties={filteredProperties}

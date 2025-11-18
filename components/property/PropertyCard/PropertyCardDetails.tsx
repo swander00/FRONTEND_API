@@ -24,13 +24,17 @@ export function PropertyCardDetails({ property }: Props) {
         )}
       </div>
 
-      {/* Address (more prominent) */}
-      <p className="mt-1 text-base font-semibold text-gray-800">
-        {property.address?.street || property.address?.unparsedAddress || 'Address not available'}
-        {property.address?.city && property.address?.province && 
-          `, ${property.address.city}, ${property.address.province}`
-        }
-      </p>
+      {/* Address - Street on first row, City/Province on second row */}
+      <div className="mt-1">
+        <p className="text-base font-semibold text-gray-800">
+          {property.address?.street || property.address?.unparsedAddress || 'Address not available'}
+        </p>
+        {(property.address?.city || property.address?.province) && (
+          <p className="text-sm text-gray-600 mt-0.5">
+            {[property.address?.city, property.address?.province].filter(Boolean).join(', ')}
+          </p>
+        )}
+      </div>
 
       {/* Divider */}
       <div className="my-3 h-px bg-gray-100" />

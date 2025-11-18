@@ -12,13 +12,8 @@ export function formatCurrency(amount: number | string | null | undefined): stri
     return 'Price not available';
   }
   
-  if (numAmount < 1000) {
-    return `$${numAmount.toLocaleString()}`;
-  }
-  if (numAmount < 1000000) {
-    return `$${(numAmount / 1000).toFixed(0)}K`;
-  }
-  return `$${(numAmount / 1000000).toFixed(2)}M`;
+  // Always show full numeric value with commas (no "K" or "M" abbreviations)
+  return `$${numAmount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 export function formatNumber(num: number): string {
