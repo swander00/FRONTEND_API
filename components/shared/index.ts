@@ -1,0 +1,3 @@
+export { PropertyDetailsModal } from "./PropertyDetailsModal";
+
+
