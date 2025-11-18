@@ -103,9 +103,24 @@ export default function PropertyDetailsModalMobile({
         .then((response) => {
           // Extract images from media array or use images field
           const images = (response as any).images || (response.media || []).map((m: any) => m.url || m.MediaURL).filter(Boolean);
+          
+          // Normalize features fields: convert string to array if needed
+          const normalizeFeatures = (features: string | string[] | undefined): string[] | undefined => {
+            if (!features) return undefined;
+            if (Array.isArray(features)) return features;
+            return features.split(/[,;|]/).map(f => f.trim()).filter(f => f.length > 0);
+          };
+          
           // Merge the fetched property with the existing one to preserve any additional data
           // Preserve both images array and media array for maximum compatibility
-          setFullProperty({ ...rawProperty, ...response, images, media: response.media });
+          setFullProperty({ 
+            ...rawProperty, 
+            ...response, 
+            images, 
+            media: response.media,
+            exteriorFeatures: normalizeFeatures(response.exteriorFeatures) ?? rawProperty?.exteriorFeatures,
+            interiorFeatures: normalizeFeatures((response as any).interiorFeatures) ?? rawProperty?.interiorFeatures,
+          });
         })
         .catch((error) => {
           console.error('Failed to fetch full property details:', error);
