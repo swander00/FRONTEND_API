@@ -220,6 +220,11 @@ export function buildQueryString(options: QueryParamsOptions): string {
     params.append('minTotalParking', filters.advanced.totalParking.min.toString());
   }
 
+  // Status filter
+  if (filters.status) {
+    params.append('status', filters.status);
+  }
+
   // Search term
   if (searchTerm && searchTerm.trim()) {
     params.append('searchTerm', searchTerm.trim());

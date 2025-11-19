@@ -59,6 +59,7 @@ export class PropertiesEndpoints {
       if (filters.minGarageSpaces !== undefined) params.minGarageSpaces = filters.minGarageSpaces;
       if (filters.minTotalParking !== undefined) params.minTotalParking = filters.minTotalParking;
       if (filters.searchTerm) params.searchTerm = filters.searchTerm;
+      if (filters.status) params.status = filters.status;
     }
 
     return this.client.get<PropertiesListResponse>('/api/properties', params);
@@ -83,6 +84,7 @@ export class PropertiesEndpoints {
     if (filters) {
       if (filters.minPrice !== undefined) params.minPrice = filters.minPrice;
       if (filters.maxPrice !== undefined) params.maxPrice = filters.maxPrice;
+      if (filters.status) params.status = filters.status;
     }
 
     // Add map bounds (must be JSON stringified)
