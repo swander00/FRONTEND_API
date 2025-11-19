@@ -9,6 +9,7 @@ import {
   useFiltersState,
   type FiltersState,
   DEFAULT_FILTERS_STATE,
+  type StatusOption,
 } from './FiltersContext';
 import { PrimaryFilters } from './PrimaryFilters';
 import { QuickFilterList } from './QuickFilterChips';
@@ -19,6 +20,7 @@ export type FiltersContainerProps = {
   onSaveSearch: () => void;
   className?: string;
   primaryHeaderSlot?: ReactNode;
+  initialStatus?: StatusOption;
 };
 
 export function FiltersContainer({
@@ -26,9 +28,10 @@ export function FiltersContainer({
   onSaveSearch,
   className,
   primaryHeaderSlot,
+  initialStatus,
 }: FiltersContainerProps) {
   return (
-    <FiltersProvider>
+    <FiltersProvider initialStatus={initialStatus}>
       <FiltersContainerInner
         className={className}
         onFiltersChange={onFiltersChange}

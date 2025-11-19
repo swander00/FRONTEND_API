@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from 'react';
 import { PROPERTY_CLASS_OPTIONS } from '@/lib/filters/options';
 
-type StatusOption = 'For Sale' | 'For Lease' | 'Sold' | 'Leased' | 'Removed';
+export type StatusOption = 'For Sale' | 'For Lease' | 'Sold' | 'Leased' | 'Removed';
 
 type TimeRangeOption =
   | 'All Time'
@@ -221,8 +221,17 @@ function filtersReducer(state: FiltersState, action: FiltersAction): FiltersStat
   }
 }
 
-export function FiltersProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(filtersReducer, DEFAULT_FILTERS_STATE);
+export function FiltersProvider({ 
+  children, 
+  initialStatus 
+}: { 
+  children: ReactNode;
+  initialStatus?: StatusOption;
+}) {
+  const initialState = initialStatus 
+    ? { ...DEFAULT_FILTERS_STATE, status: initialStatus }
+    : DEFAULT_FILTERS_STATE;
+  const [state, dispatch] = useReducer(filtersReducer, initialState);
 
   const resetAll = useCallback(() => {
     dispatch({ type: 'RESET_ALL' });

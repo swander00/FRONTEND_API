@@ -15,15 +15,15 @@ export function PropertyGrid({
   onTour,
 }: PropertyGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 lg:gap-6">
       {properties.map((property, index) => {
         // Prioritize first 5 images (above the fold on most screens)
-        // Responsive breakpoints (Tailwind default):
-        // - Mobile (< 640px): 1 column
-        // - Small (≥ 640px): 2 columns
-        // - Medium (≥ 768px): 3 columns
-        // - Large (≥ 1024px): 4 columns
-        // - 2XL (≥ 1536px): 5 columns (maximum - only on very wide screens)
+        // Responsive breakpoints (adjusted for better content fit):
+        // - Mobile (< 640px): 1 column, gap-4
+        // - Small (≥ 640px): 2 columns, gap-4
+        // - Medium (≥ 768px): 3 columns, gap-5
+        // - Large (≥ 1024px): 4 columns, gap-6
+        // - XL (≥ 1280px): 5 columns, gap-6 (reduced from 1536px to prevent jumbling)
         const isAboveFold = index < 5;
         
         return (

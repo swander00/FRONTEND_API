@@ -10,10 +10,10 @@ type ViewOptionsProps = {
 
 const sortOptions = [
   { label: 'Newest First', value: 'newest' },
-  { label: 'Price: Low to High', value: 'price-asc' },
-  { label: 'Price: High to Low', value: 'price-desc' },
-  { label: 'Bedrooms: Most', value: 'beds-desc' },
-  { label: 'Square Footage: Largest', value: 'sqft-desc' },
+  { label: 'Price: Low to High', value: 'price_asc' },
+  { label: 'Price: High to Low', value: 'price_desc' },
+  { label: 'Bedrooms: Most', value: 'beds_desc' },
+  { label: 'Square Footage: Largest', value: 'sqft_desc' },
 ];
 
 export function ViewOptions({ view, onViewChange, sortBy, onSortChange }: ViewOptionsProps) {

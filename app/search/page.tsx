@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ResultsSummary } from '@/components/results/ResultsSummary';
 import { ViewOptions } from '@/components/results/ViewOptions';
@@ -12,8 +13,12 @@ import { Property } from '@/types/property';
 import { PageContainer, SectionCard } from '@/components/layout';
 import { FiltersContainer, type FiltersState } from '@/components/search/FiltersContainer';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useResponsivePageSize } from '@/hooks/useResponsivePageSize';
 import { useProperties } from '@/hooks/useProperties';
 import { useMapProperties, type MapBounds } from '@/hooks/useMapProperties';
+import { api, type PropertyDetailsResponse, type PropertyMediaItem } from '@/lib/api';
+import type { PropertyRoom } from '@/types/property';
+import { DEFAULT_FILTERS_STATE } from '@/components/search/FiltersContainer/FiltersContext';
 
 // Default bounds for Toronto area (used when map view is first loaded)
 const DEFAULT_MAP_BOUNDS: MapBounds = {
@@ -21,7 +26,203 @@ const DEFAULT_MAP_BOUNDS: MapBounds = {
   southWest: { lat: 43.6, lng: -79.5 },
 };
 
+// Helper function to convert PropertyDetailsResponse to Property
+function convertPropertyDetailsToProperty(response: PropertyDetailsResponse): Property {
+  // Extract images from media array
+  const images: string[] = response.media
+    ? response.media.map((m: PropertyMediaItem) => m.url).filter((url): url is string => Boolean(url && typeof url === 'string' && url.trim() !== ''))
+    : [];
+
+  // Normalize features fields
+  const normalizeFeatures = (features: string | string[] | undefined): string[] | undefined => {
+    if (!features) return undefined;
+    if (Array.isArray(features)) return features;
+    return features.split(/[,;|]/).map(f => f.trim()).filter(f => f.length > 0);
+  };
+
+  // Normalize transactionType
+  const normalizeTransactionType = (type: any): 'For Sale' | 'For Lease' | undefined => {
+    if (!type) return undefined;
+    const normalized = String(type).trim();
+    if (normalized === 'For Sale' || normalized === 'For Lease') {
+      return normalized as 'For Sale' | 'For Lease';
+    }
+    if (normalized.toLowerCase().includes('sale') || normalized.toLowerCase().includes('sell')) {
+      return 'For Sale';
+    }
+    if (normalized.toLowerCase().includes('lease') || normalized.toLowerCase().includes('rent')) {
+      return 'For Lease';
+    }
+    return undefined;
+  };
+
+  // Normalize rooms
+  const normalizeRooms = (rooms: any): PropertyRoom[] | undefined => {
+    if (!rooms || !rooms.rooms) return undefined;
+    if (!Array.isArray(rooms.rooms)) return undefined;
+    return rooms.rooms.map((room: any) => ({
+      type: String(room.roomType || room.type || ''),
+      level: room.level || undefined,
+      dimensions: room.dimensions || undefined,
+      measurements: room.measurements || undefined,
+      description: room.description || undefined,
+      features: Array.isArray(room.features) ? room.features : room.features ? [room.features] : undefined,
+    })).filter((room: PropertyRoom) => room.type);
+  };
+
+  return {
+    id: response.listingKey,
+    listingKey: response.listingKey,
+    mlsNumber: response.mlsNumber,
+    price: response.listPrice,
+    originalListPrice: response.originalListPrice,
+    closePrice: response.closePrice,
+    priceReductionAmount: response.priceReductionAmount,
+    priceReductionPercent: response.priceReductionPercent,
+    address: {
+      street: response.fullAddress,
+      streetNumber: response.streetNumber,
+      streetName: response.streetName,
+      streetSuffix: response.streetSuffix,
+      unitNumber: response.unitNumber,
+      city: response.city,
+      province: response.stateOrProvince,
+      postalCode: response.postalCode,
+      countyOrParish: response.countyOrParish,
+    },
+    location: {
+      neighborhood: response.community || response.city,
+      tagColor: '#2563eb',
+      cityRegion: response.community,
+    },
+    propertyType: response.propertyType,
+    propertySubType: response.propertySubType,
+    propertyClass: undefined,
+    architecturalStyle: response.architecturalStyle,
+    description: response.publicRemarks,
+    publicRemarks: response.publicRemarks,
+    bedrooms: {
+      above: response.bedroomsAboveGrade || 0,
+      below: response.bedroomsBelowGrade || 0,
+      total: (response.bedroomsAboveGrade || 0) + (response.bedroomsBelowGrade || 0),
+    },
+    bathrooms: response.bathroomsTotalInteger || 0,
+    kitchens: {
+      aboveGrade: response.kitchensAboveGrade,
+      belowGrade: response.kitchensBelowGrade,
+      total: (response.kitchensAboveGrade || 0) + (response.kitchensBelowGrade || 0),
+    },
+    squareFootage: {
+      min: response.livingAreaMin || 0,
+      max: response.livingAreaMax || 0,
+    },
+    lotSize: {
+      width: response.lotSizeWidth,
+      depth: response.lotSizeDepth,
+      acres: response.lotSizeAcres,
+      units: response.lotSizeUnits,
+    },
+    parking: {
+      garage: response.garageSpaces || 0,
+      driveway: (response.parkingTotal || 0) - (response.garageSpaces || 0),
+      total: response.parkingTotal,
+    },
+    basement: response.basementStatus,
+    basementDetails: {
+      status: response.basementStatus,
+      entrance: response.basementEntrance,
+      hasKitchen: response.basementKitchen,
+      rentalPotential: response.basementRental,
+    },
+    age: {
+      display: response.approximateAge,
+    },
+    utilities: {
+      heatType: response.heatType,
+      cooling: response.cooling,
+      sewer: response.sewer,
+      fireplace: response.fireplaceYN === true || response.fireplaceYN === 'Y',
+    },
+    association: {
+      fee: response.associationFee,
+      additionalMonthlyFee: response.additionalMonthlyFee,
+      feeIncludes: response.associationFeeIncludes,
+      amenities: response.associationAmenities,
+    },
+    exteriorFeatures: normalizeFeatures(response.exteriorFeatures),
+    interiorFeatures: normalizeFeatures(response.interiorFeatures),
+    propertyFeatures: response.propertyFeatures,
+    coolingFeatures: response.cooling ? [response.cooling] : undefined,
+    poolFeatures: response.poolFeatures,
+    possession: response.possession,
+    waterfront: {
+      waterBodyName: response.waterBodyName,
+      waterfrontYN: response.waterfrontYN,
+      waterView: response.waterView,
+      features: response.waterfrontFeatures,
+    },
+    coordinates: response.latitude && response.longitude ? {
+      lat: response.latitude,
+      lng: response.longitude,
+    } : undefined,
+    daysOnMarket: response.daysOnMarket,
+    listingAge: response.modificationTimestamp,
+    isNewListing: response.isNewListing,
+    isPriceReduced: response.priceReductionAmount ? true : false,
+    mediaCount: response.mediaCount,
+    primaryImageUrl: response.primaryImageUrl || undefined,
+    images,
+    media: response.media.map(m => ({
+      id: m.id,
+      url: m.url,
+      alt: m.alt,
+      order: m.order,
+      caption: m.caption,
+      dimensions: m.dimensions,
+    })),
+    virtualTourUrl: response.virtualTourUrl,
+    openHouse: response.openHouseDisplay ? {
+      display: response.openHouseDisplay,
+      day: '',
+      date: '',
+      time: '',
+    } : undefined,
+    openHouseFlags: {
+      hasUpcomingOpenHouse: !!response.openHouseDisplay,
+      hasOpenHouseToday: false,
+      hasOpenHouseTomorrow: false,
+      hasNextWeekendOpenHouse: false,
+    },
+    hasVirtualTour: response.hasVirtualTour,
+    listedAt: response.listDate || response.originalEntryTimestamp,
+    status: response.mlsStatus,
+    mlsStatus: response.mlsStatus,
+    transactionType: normalizeTransactionType(response.transactionType),
+    statusDates: response.statusDates,
+    modificationTimestamp: response.modificationTimestamp,
+    tax: response.taxAnnualAmount && response.taxYear ? {
+      amount: response.taxAnnualAmount,
+      year: response.taxYear,
+    } : undefined,
+    taxes: response.taxAnnualAmount && response.taxYear ? {
+      annualAmount: response.taxAnnualAmount,
+      year: response.taxYear,
+    } : undefined,
+    stats: {
+      views: response.viewCount,
+      bookmarks: response.saveCount,
+      favorites: 0,
+    },
+    rooms: normalizeRooms(response.rooms),
+    balconyType: response.balconyType,
+    locker: response.locker,
+    furnished: response.furnished,
+  };
+}
+
 export default function SearchPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
   const [view, setView] = useState<'grid' | 'map'>('grid');
@@ -31,11 +232,119 @@ export default function SearchPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(DEFAULT_MAP_BOUNDS);
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const responsivePageSize = useResponsivePageSize();
+  
+  // Get initial status from URL
+  const urlStatusParam = searchParams.get('status');
+  const urlToStatusMap: Record<string, 'For Sale' | 'For Lease' | 'Sold' | 'Leased' | 'Removed'> = {
+    'for-sale': 'For Sale',
+    'for-lease': 'For Lease',
+    'sold': 'Sold',
+    'leased': 'Leased',
+    'removed': 'Removed',
+  };
+  const initialStatus = urlStatusParam && urlToStatusMap[urlStatusParam] ? urlToStatusMap[urlStatusParam] : undefined;
+  
+  // Ensure URL always has status parameter (set to 'for-sale' if missing)
+  useEffect(() => {
+    const currentStatusParam = searchParams.get('status');
+    if (!currentStatusParam) {
+      const params = new URLSearchParams(searchParams.toString());
+      const mlsParam = searchParams.get('mls');
+      params.set('status', 'for-sale');
+      if (mlsParam) {
+        params.set('mls', mlsParam);
+      }
+      const newUrl = params.toString() ? `?${params.toString()}` : '';
+      router.replace(`/search${newUrl}`, { scroll: false });
+    }
+  }, [searchParams, router]);
+  
+  // Handle filters change with URL sync
+  const handleFiltersChange = useCallback((filters: FiltersState) => {
+    setFiltersSnapshot(filters);
+    
+    // Update URL when status changes
+    const currentUrlStatusParam = searchParams.get('status');
+    const statusToUrlMap: Record<string, string> = {
+      'For Sale': 'for-sale',
+      'For Lease': 'for-lease',
+      'Sold': 'sold',
+      'Leased': 'leased',
+      'Removed': 'removed',
+    };
+    const urlStatus = statusToUrlMap[filters.status];
+    
+    if (currentUrlStatusParam !== urlStatus) {
+      const params = new URLSearchParams(searchParams.toString());
+      const mlsParam = searchParams.get('mls');
+      
+      // Always set status in URL, including "For Sale"
+      params.set('status', urlStatus);
+      
+      if (mlsParam) {
+        params.set('mls', mlsParam);
+      }
+      
+      const newUrl = params.toString() ? `?${params.toString()}` : '';
+      router.replace(`/search${newUrl}`, { scroll: false });
+    }
+  }, [searchParams, router]);
+  
+  // Sync URL when property modal opens/closes
+  useEffect(() => {
+    const currentMlsParam = searchParams.get('mls');
+    const statusParam = searchParams.get('status');
+    const mlsNumber = selectedProperty?.mlsNumber;
+    
+    if (currentMlsParam !== mlsNumber) {
+      const params = new URLSearchParams(searchParams.toString());
+      
+      if (mlsNumber) {
+        params.set('mls', mlsNumber);
+      } else {
+        params.delete('mls');
+      }
+      
+      if (statusParam) {
+        params.set('status', statusParam);
+      }
+      
+      const newUrl = params.toString() ? `?${params.toString()}` : '';
+      router.replace(`/search${newUrl}`, { scroll: false });
+    }
+  }, [selectedProperty?.mlsNumber, searchParams, router]);
+  
+  // Fetch property from URL if MLS param exists
+  useEffect(() => {
+    const mlsParam = searchParams.get('mls');
+    if (mlsParam) {
+      // Only fetch if we don't have a property selected or if the MLS number is different
+      if (!selectedProperty || selectedProperty.mlsNumber !== mlsParam) {
+        // Fetch property details by MLS number
+        api.properties.getDetails(mlsParam)
+          .then((response) => {
+            const property = convertPropertyDetailsToProperty(response);
+            setSelectedProperty(property);
+          })
+          .catch((error) => {
+            console.error('Failed to fetch property from URL:', error);
+            // Clear property if fetch fails
+            setSelectedProperty(null);
+          });
+      }
+    } else if (selectedProperty) {
+      // If URL doesn't have MLS param but we have a selected property, clear it
+      // This handles the case when user navigates back/forward or manually changes URL
+      setSelectedProperty(null);
+    }
+  }, [searchParams, selectedProperty]);
 
   // Fetch properties from Railway API with filters, sort, and search (for grid view)
+  // Use responsive pageSize that matches the grid column layout
   const { properties: gridProperties, loading: gridLoading, error: gridError, total: gridTotal, totalPages: gridTotalPages } = useProperties({
     page: currentPage,
-    pageSize: 24,
+    pageSize: responsivePageSize,
     enabled: view === 'grid',
     filters: filtersSnapshot,
     sortBy,
@@ -120,9 +429,10 @@ export default function SearchPage() {
         {/* Search Section */}
         <SectionCard className="mb-6">
           <FiltersContainer
-            onFiltersChange={setFiltersSnapshot}
+            onFiltersChange={handleFiltersChange}
             onSaveSearch={handleSaveSearch}
             className="pt-1"
+            initialStatus={initialStatus}
             primaryHeaderSlot={
               <SearchBar
                 value={searchQuery}
