@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Analytics } from '@vercel/analytics/react';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import { AlertBanner } from '@/components/ui/banners/AlertBanner';
 import { NavbarWrapper } from '@/components/layout/Header/NavbarWrapper';
@@ -29,6 +30,7 @@ export default function RootLayout({
           <NavbarWrapper />
           <main>{children}</main>
           <Analytics />
+          <SpeedInsights />
         </GoogleOneTapProvider>
       </body>
     </html>
