@@ -113,6 +113,24 @@ export default function PropertyDetailsModalMobile({
           
           // Merge the fetched property with the existing one to preserve any additional data
           // Preserve both images array and media array for maximum compatibility
+          
+          // Normalize transactionType to match Property type
+          const normalizeTransactionType = (type: any): 'For Sale' | 'For Lease' | undefined => {
+            if (!type) return undefined;
+            const normalized = String(type).trim();
+            if (normalized === 'For Sale' || normalized === 'For Lease') {
+              return normalized as 'For Sale' | 'For Lease';
+            }
+            // Default to 'For Sale' if it's a sale-related value, otherwise undefined
+            if (normalized.toLowerCase().includes('sale') || normalized.toLowerCase().includes('sell')) {
+              return 'For Sale';
+            }
+            if (normalized.toLowerCase().includes('lease') || normalized.toLowerCase().includes('rent')) {
+              return 'For Lease';
+            }
+            return undefined;
+          };
+          
           setFullProperty({ 
             ...rawProperty, 
             ...response, 
@@ -122,6 +140,8 @@ export default function PropertyDetailsModalMobile({
             interiorFeatures: normalizeFeatures((response as any).interiorFeatures) ?? rawProperty?.interiorFeatures,
             // Convert null to undefined for primaryImageUrl to match Property type
             primaryImageUrl: (response as any).primaryImageUrl ?? undefined,
+            // Normalize transactionType to match Property type
+            transactionType: normalizeTransactionType((response as any).transactionType) ?? rawProperty?.transactionType,
           });
         })
         .catch((error) => {
