@@ -1,0 +1,119 @@
+/**
+ * Authenticated HTTP Client
+ * 
+ * HTTP client that automatically includes Supabase JWT token in requests
+ */
+
+import type { HttpClient } from './httpClient';
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
+
+/**
+ * Create authenticated HTTP client that includes JWT token
+ */
+export function createAuthenticatedClient(baseUrl: string): HttpClient {
+  const baseClient = createHttpClient(baseUrl);
+  
+  // Create a wrapper that adds auth headers
+  return {
+    ...baseClient,
+    async get<T>(endpoint: string, params?: Record<string, string | number | boolean | string[] | undefined>): Promise<T> {
+      const headers = await getAuthHeaders();
+      const url = buildUrl(baseUrl, endpoint, params);
+      return makeRequest<T>(url, { method: 'GET', headers });
+    },
+    async post<T>(endpoint: string, data?: unknown): Promise<T> {
+      const headers = await getAuthHeaders();
+      const url = buildUrl(baseUrl, endpoint);
+      return makeRequest<T>(url, {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: data ? JSON.stringify(data) : undefined,
+      });
+    },
+    async put<T>(endpoint: string, data?: unknown): Promise<T> {
+      const headers = await getAuthHeaders();
+      const url = buildUrl(baseUrl, endpoint);
+      return makeRequest<T>(url, {
+        method: 'PUT',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: data ? JSON.stringify(data) : undefined,
+      });
+    },
+    async delete<T>(endpoint: string): Promise<T> {
+      const headers = await getAuthHeaders();
+      const url = buildUrl(baseUrl, endpoint);
+      return makeRequest<T>(url, { method: 'DELETE', headers });
+    },
+  } as HttpClient;
+}
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const supabase = getSupabaseBrowserClient();
+  const headers: Record<string, string> = {};
+  
+  if (supabase) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+  }
+  
+  return headers;
+}
+
+function buildUrl(baseUrl: string, endpoint: string, params?: Record<string, string | number | boolean | string[] | undefined>): string {
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = new URL(`${baseUrl.replace(/\/$/, '')}${cleanEndpoint}`);
+
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (Array.isArray(value)) {
+        value.forEach((item) => url.searchParams.append(key, String(item)));
+      } else {
+        url.searchParams.append(key, String(value));
+      }
+    });
+  }
+
+  return url.toString();
+}
+
+async function makeRequest<T>(url: string, options: RequestInit): Promise<T> {
+  const response = await fetch(url, options);
+  
+  if (!response.ok) {
+    let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      if (errorData.error) {
+        errorMessage = errorData.error.message || errorData.message || errorMessage;
+      }
+    } catch {
+      // If response is not JSON, use status text
+    }
+    const error = new Error(errorMessage);
+    (error as any).status = response.status;
+    throw error;
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  return response.json();
+}
+
+/**
+ * Get authenticated client instance (singleton)
+ */
+let authenticatedClient: HttpClient | null = null;
+
+export function getAuthenticatedClient(): HttpClient {
+  if (!authenticatedClient) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+    authenticatedClient = createAuthenticatedClient(baseUrl);
+  }
+  return authenticatedClient;
+}
+

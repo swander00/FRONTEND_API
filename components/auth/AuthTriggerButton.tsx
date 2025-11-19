@@ -5,6 +5,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
 import { useSupabaseBrowserClient } from '@/hooks/useSupabaseBrowserClient';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { AuthModal, type AuthMode } from './AuthModal';
 
 const MODAL_TRANSITION = 220;
@@ -21,6 +22,7 @@ export function AuthTriggerButton({
   showLabelWhenAuthenticated = false,
 }: AuthTriggerButtonProps) {
   const supabase = useSupabaseBrowserClient();
+  const { profile } = useUserProfile();
 
   const [session, setSession] = useState<Session | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,9 +110,17 @@ export function AuthTriggerButton({
   }, [supabase]);
 
   const user = session?.user ?? null;
-  const initials = useMemo(() => getUserInitials(user), [user]);
-  const displayName = useMemo(() => getDisplayName(user), [user]);
-  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  const initials = useMemo(() => getUserInitials(user, profile), [user, profile]);
+  const displayName = useMemo(() => getDisplayName(user, profile), [user, profile]);
+  const avatarUrl = useMemo(() => {
+    // Check profile first (most reliable), then fallback to auth metadata
+    if (profile?.AvatarUrl) {
+      return profile.AvatarUrl;
+    }
+    // Check multiple possible avatar fields from OAuth providers
+    const metadata = user?.user_metadata;
+    return metadata?.avatar_url || metadata?.picture || metadata?.image || undefined;
+  }, [user, profile]);
 
   return (
     <div className="relative">
@@ -213,11 +223,24 @@ export function AuthTriggerButton({
   );
 }
 
-function getUserInitials(user: User | null): string {
+function getUserInitials(user: User | null, profile?: { FirstName?: string | null; LastName?: string | null } | null): string {
   if (!user) {
     return 'U';
   }
 
+  // Try profile first
+  if (profile?.FirstName || profile?.LastName) {
+    const first = profile.FirstName?.[0]?.toUpperCase() || '';
+    const last = profile.LastName?.[0]?.toUpperCase() || '';
+    if (first && last) {
+      return `${first}${last}`;
+    }
+    if (first) {
+      return first;
+    }
+  }
+
+  // Fallback to auth metadata
   const fullName = (user.user_metadata?.full_name as string | undefined)?.trim();
 
   if (!fullName) {
@@ -233,11 +256,20 @@ function getUserInitials(user: User | null): string {
   return first ?? user.email?.[0]?.toUpperCase() ?? 'U';
 }
 
-function getDisplayName(user: User | null): string | undefined {
+function getDisplayName(user: User | null, profile?: { FirstName?: string | null; LastName?: string | null } | null): string | undefined {
   if (!user) {
     return undefined;
   }
 
+  // Try profile first
+  if (profile?.FirstName || profile?.LastName) {
+    const name = [profile.FirstName, profile.LastName].filter(Boolean).join(' ');
+    if (name.trim()) {
+      return name;
+    }
+  }
+
+  // Fallback to auth metadata
   const fullName = user.user_metadata?.full_name as string | undefined;
   if (fullName && fullName.trim().length > 0) {
     return fullName;
