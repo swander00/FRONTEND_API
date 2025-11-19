@@ -36,22 +36,24 @@ export function useProperties(options: UsePropertiesOptions = {}) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    // Debounce requests to prevent rate limiting (429 errors)
+    const timeoutId = setTimeout(() => {
+      setLoading(true);
+      setError(null);
 
-    // Build query string with all parameters
-    const queryString = buildQueryString({
-      filters,
-      pagination: { page, pageSize },
-      sortBy,
-      searchTerm,
-    });
+      // Build query string with all parameters
+      const queryString = buildQueryString({
+        filters,
+        pagination: { page, pageSize },
+        sortBy,
+        searchTerm,
+      });
 
-    console.log('Query string:', queryString);
-    console.log('Filters:', filters ? JSON.stringify(filters, null, 2) : 'null');
-    console.log('Full URL:', `${API_ENDPOINTS.properties}?${queryString}`);
+      console.log('Query string:', queryString);
+      console.log('Filters:', filters ? JSON.stringify(filters, null, 2) : 'null');
+      console.log('Full URL:', `${API_ENDPOINTS.properties}?${queryString}`);
 
-    apiGetWithQueryString<PropertiesResponse>(API_ENDPOINTS.properties, queryString)
+      apiGetWithQueryString<PropertiesResponse>(API_ENDPOINTS.properties, queryString)
       .then((data) => {
         // Log the raw response for debugging
         console.log('API Response:', data);
@@ -300,6 +302,12 @@ export function useProperties(options: UsePropertiesOptions = {}) {
       .finally(() => {
         setLoading(false);
       });
+    }, 300); // 300ms debounce to prevent rapid successive requests
+
+    // Cleanup: cancel pending request if dependencies change
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [page, pageSize, enabled, filters, sortBy, searchTerm]);
 
   return {

@@ -16,38 +16,61 @@ export function usePropertyDetailsData(rawProperty?: Property, options?: UseProp
   const property = useMemo(() => (resolvedRawProperty ? normalizeProperty(resolvedRawProperty) : null), [resolvedRawProperty]);
 
   const galleryImages = useMemo(() => {
-    // First, try to use the images array (array of URLs)
-    if (resolvedRawProperty?.images && resolvedRawProperty.images.length > 0) {
-      return resolvedRawProperty.images.map((url, index) => ({
-        id: index + 1,
-        url,
-        alt: `${property?.StreetAddress ?? "Property"} - Image ${index + 1}`,
-      }));
+    // First, try to extract from media array (array of media objects) - this is the primary source
+    if (resolvedRawProperty?.media && Array.isArray(resolvedRawProperty.media) && resolvedRawProperty.media.length > 0) {
+      const mediaImages = resolvedRawProperty.media
+        .map((m: any, index: number) => {
+          // Handle PropertyMediaItem structure: { id, url, alt, order, caption }
+          const url = m.url || m.MediaURL || null;
+          if (!url || typeof url !== 'string' || url.trim() === '') {
+            return null;
+          }
+          return {
+            id: m.id || m.MediaKey || `media-${index + 1}`,
+            url: url.trim(),
+            alt: m.alt || m.caption || m.ShortDescription || `${property?.StreetAddress ?? "Property"} - Image ${index + 1}`,
+          };
+        })
+        .filter((img: any): img is { id: string | number; url: string; alt: string } => img !== null && img.url);
+      
+      if (mediaImages.length > 0) {
+        return mediaImages;
+      }
     }
 
-    // Second, try to extract from media array (array of media objects)
-    if (resolvedRawProperty?.media && Array.isArray(resolvedRawProperty.media) && resolvedRawProperty.media.length > 0) {
-      return resolvedRawProperty.media
-        .map((m: any, index: number) => ({
-          id: m.id || m.MediaKey || index + 1,
-          url: m.url || m.MediaURL,
-          alt: m.alt || m.ShortDescription || m.caption || `${property?.StreetAddress ?? "Property"} - Image ${index + 1}`,
-        }))
-        .filter((img: any) => img.url); // Filter out any items without URLs
+    // Second, try to use the images array (array of URLs)
+    if (resolvedRawProperty?.images && Array.isArray(resolvedRawProperty.images) && resolvedRawProperty.images.length > 0) {
+      const imageUrls = resolvedRawProperty.images
+        .map((url: any, index: number) => {
+          if (!url || typeof url !== 'string' || url.trim() === '') {
+            return null;
+          }
+          return {
+            id: index + 1,
+            url: url.trim(),
+            alt: `${property?.StreetAddress ?? "Property"} - Image ${index + 1}`,
+          };
+        })
+        .filter((img: any): img is { id: number; url: string; alt: string } => img !== null);
+      
+      if (imageUrls.length > 0) {
+        return imageUrls;
+      }
     }
 
     // Third, fall back to primaryImageUrl
-    if (resolvedRawProperty?.primaryImageUrl) {
+    if (resolvedRawProperty?.primaryImageUrl && typeof resolvedRawProperty.primaryImageUrl === 'string' && resolvedRawProperty.primaryImageUrl.trim() !== '') {
       return [
         {
           id: 1,
-          url: resolvedRawProperty.primaryImageUrl,
+          url: resolvedRawProperty.primaryImageUrl.trim(),
           alt: `${property?.StreetAddress ?? "Property"} - Image 1`,
         },
       ];
     }
 
-    return propertyImages;
+    // Last resort: return empty array instead of mock images
+    return [];
   }, [resolvedRawProperty?.images, resolvedRawProperty?.media, resolvedRawProperty?.primaryImageUrl, property?.StreetAddress]);
 
   const specs = useMemo(() => (property ? buildPropertySpecs(property) : []), [property]);

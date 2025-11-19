@@ -115,6 +115,25 @@ export class HttpClient {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
+          // Handle 429 (Too Many Requests) with retry logic
+          if (response.status === 429 && attempt < this.config.retries) {
+            // Check for Retry-After header
+            const retryAfter = response.headers.get('Retry-After');
+            let delay = this.config.retryDelay * Math.pow(2, attempt); // Exponential backoff
+            
+            if (retryAfter) {
+              // Use Retry-After header if provided (can be seconds or HTTP date)
+              const retryAfterSeconds = parseInt(retryAfter, 10);
+              if (!isNaN(retryAfterSeconds)) {
+                delay = retryAfterSeconds * 1000; // Convert to milliseconds
+              }
+            }
+            
+            clearTimeout(timeoutId);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue; // Retry the request
+          }
+          
           await this.handleErrorResponse(response);
         }
 
@@ -127,7 +146,7 @@ export class HttpClient {
       } catch (error) {
         clearTimeout(timeoutId);
 
-        // Don't retry on abort (timeout) or client errors (4xx)
+        // Don't retry on abort (timeout)
         if (error instanceof Error) {
           if (error.name === 'AbortError') {
             throw new Error(`Request timeout after ${this.config.timeout}ms`);
@@ -137,8 +156,9 @@ export class HttpClient {
         lastError = error instanceof Error ? error : new Error(String(error));
 
         // Retry on network errors or server errors (5xx)
+        // Note: 429 is handled above in the response.ok check
         if (attempt < this.config.retries) {
-          const delay = this.config.retryDelay * (attempt + 1);
+          const delay = this.config.retryDelay * Math.pow(2, attempt); // Exponential backoff
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
@@ -157,14 +177,26 @@ export class HttpClient {
     let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
     let errorDetails: unknown = null;
 
+    // Provide user-friendly error messages for common status codes
+    if (response.status === 429) {
+      errorMessage = 'Too many requests. Please wait a moment and try again.';
+    } else if (response.status === 503) {
+      errorMessage = 'Service temporarily unavailable. Please try again later.';
+    } else if (response.status >= 500) {
+      errorMessage = 'Server error. Please try again later.';
+    }
+
     try {
       const errorData: ApiErrorResponse = await response.json();
       if (errorData.error) {
-        errorMessage = errorData.error.message || errorMessage;
+        // Use API error message if available, but keep user-friendly message for 429
+        if (response.status !== 429) {
+          errorMessage = errorData.error.message || errorMessage;
+        }
         errorDetails = errorData.error.details;
       }
     } catch {
-      // If response is not JSON, use status text
+      // If response is not JSON, use status text or our friendly message
     }
 
     const error = new Error(errorMessage);
@@ -183,8 +215,8 @@ export function createHttpClient(baseUrl: string): HttpClient {
   return new HttpClient({
     baseUrl,
     timeout: 30000,
-    retries: 0, // Disable retries by default (can be enabled per request if needed)
-    retryDelay: 1000,
+    retries: 3, // Enable retries for rate limiting (429) and server errors
+    retryDelay: 1000, // Base delay of 1 second, will use exponential backoff
   });
 }
 

@@ -102,7 +102,18 @@ export default function PropertyDetailsModalMobile({
       api.properties.getDetails(listingKey)
         .then((response) => {
           // Extract images from media array or use images field
-          const images = (response as any).images || (response.media || []).map((m: any) => m.url || m.MediaURL).filter(Boolean);
+          // Prioritize media array as it's the primary source
+          let images: string[] = [];
+          if (response.media && Array.isArray(response.media) && response.media.length > 0) {
+            images = response.media
+              .map((m: any) => m.url)
+              .filter((url: any): url is string => Boolean(url && typeof url === 'string' && url.trim() !== ''));
+          }
+          // Fallback to images field if media array is empty
+          if (images.length === 0 && (response as any).images && Array.isArray((response as any).images)) {
+            images = ((response as any).images || [])
+              .filter((url: any): url is string => Boolean(url && typeof url === 'string' && url.trim() !== ''));
+          }
           
           // Normalize features fields: convert string to array if needed
           const normalizeFeatures = (features: string | string[] | undefined): string[] | undefined => {
