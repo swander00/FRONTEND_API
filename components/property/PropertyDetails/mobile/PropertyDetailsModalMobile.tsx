@@ -120,6 +120,8 @@ export default function PropertyDetailsModalMobile({
             media: response.media,
             exteriorFeatures: normalizeFeatures(response.exteriorFeatures) ?? rawProperty?.exteriorFeatures,
             interiorFeatures: normalizeFeatures((response as any).interiorFeatures) ?? rawProperty?.interiorFeatures,
+            // Convert null to undefined for primaryImageUrl to match Property type
+            primaryImageUrl: (response as any).primaryImageUrl ?? undefined,
           });
         })
         .catch((error) => {
