@@ -4,47 +4,58 @@
  * HTTP client that automatically includes Supabase JWT token in requests
  */
 
-import type { HttpClient } from './httpClient';
+import { HttpClient } from './httpClient';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 
 /**
  * Create authenticated HTTP client that includes JWT token
+ * Extends HttpClient and adds authentication headers
  */
 export function createAuthenticatedClient(baseUrl: string): HttpClient {
-  const baseClient = createHttpClient(baseUrl);
-  
-  // Create a wrapper that adds auth headers
-  return {
-    ...baseClient,
+  // Create a wrapper class that extends HttpClient
+  class AuthenticatedHttpClient extends HttpClient {
+    constructor(baseUrl: string) {
+      super({ baseUrl });
+    }
+
+    // Override get method to add auth headers
     async get<T>(endpoint: string, params?: Record<string, string | number | boolean | string[] | undefined>): Promise<T> {
       const headers = await getAuthHeaders();
-      const url = buildUrl(baseUrl, endpoint, params);
-      return makeRequest<T>(url, { method: 'GET', headers });
-    },
+      const url = this.buildUrl(endpoint, params);
+      return this.request<T>(url, { method: 'GET', headers });
+    }
+
+    // Override post method to add auth headers
     async post<T>(endpoint: string, data?: unknown): Promise<T> {
       const headers = await getAuthHeaders();
-      const url = buildUrl(baseUrl, endpoint);
-      return makeRequest<T>(url, {
+      const url = this.buildUrl(endpoint);
+      return this.request<T>(url, {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: data ? JSON.stringify(data) : undefined,
       });
-    },
+    }
+
+    // Override put method to add auth headers
     async put<T>(endpoint: string, data?: unknown): Promise<T> {
       const headers = await getAuthHeaders();
-      const url = buildUrl(baseUrl, endpoint);
-      return makeRequest<T>(url, {
+      const url = this.buildUrl(endpoint);
+      return this.request<T>(url, {
         method: 'PUT',
         headers: { ...headers, 'Content-Type': 'application/json' },
         body: data ? JSON.stringify(data) : undefined,
       });
-    },
+    }
+
+    // Override delete method to add auth headers
     async delete<T>(endpoint: string): Promise<T> {
       const headers = await getAuthHeaders();
-      const url = buildUrl(baseUrl, endpoint);
-      return makeRequest<T>(url, { method: 'DELETE', headers });
-    },
-  } as HttpClient;
+      const url = this.buildUrl(endpoint);
+      return this.request<T>(url, { method: 'DELETE', headers });
+    }
+  }
+
+  return new AuthenticatedHttpClient(baseUrl);
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {

@@ -59,8 +59,8 @@ export function normalizeProperty(property: Property) {
   const squareFootageMin = property.squareFootage?.min;
   const squareFootageMax = property.squareFootage?.max;
 
-  // Get list date from listedAt, listDate, or modificationTimestamp
-  const listDateRaw = property.listedAt ?? property.listDate ?? property.modificationTimestamp;
+  // Get list date from listedAt or modificationTimestamp
+  const listDateRaw = property.listedAt ?? property.modificationTimestamp;
   const listDate =
     listDateRaw instanceof Date
       ? listDateRaw.toISOString()
@@ -117,8 +117,8 @@ export function normalizeProperty(property: Property) {
     KitchensAbove: kitchenAbove,
     KitchensBelow: kitchenBelow,
     Basement: property.basement ?? property.basementDetails?.status,
-    BasementEntrance: property.basementDetails?.entrance ?? property.basementEntrance,
-    BasementKitchen: property.basementDetails?.hasKitchen ?? property.basementKitchen ?? false,
+    BasementEntrance: property.basementDetails?.entrance,
+    BasementKitchen: property.basementDetails?.hasKitchen ?? false,
     GarageParking: property.parking?.garage,
     DriveParking: property.parking?.driveway,
     TotalParking: totalParking,

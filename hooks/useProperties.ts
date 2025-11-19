@@ -70,26 +70,29 @@ export function useProperties(options: UsePropertiesOptions = {}) {
         if (data) {
           // Check for new format (with pagination object)
           if ('pagination' in data && data.pagination) {
-            propertiesArray = data.properties || [];
-            totalCount = data.totalCount || 0;
-            pageNum = data.pagination.page || page;
-            pageSizeNum = data.pagination.pageSize || pageSize;
-            totalPagesNum = data.pagination.totalPages || 0;
+            const typedData = data as { properties?: any[]; totalCount?: number; pagination?: { page?: number; pageSize?: number; totalPages?: number } };
+            propertiesArray = typedData.properties || [];
+            totalCount = typedData.totalCount || 0;
+            pageNum = typedData.pagination?.page || page;
+            pageSizeNum = typedData.pagination?.pageSize || pageSize;
+            totalPagesNum = typedData.pagination?.totalPages || 0;
           } 
           // Check for old format (flat structure)
           else if ('total' in data) {
-            propertiesArray = data.properties || [];
-            totalCount = data.total || 0;
-            pageNum = data.page || page;
-            pageSizeNum = data.pageSize || pageSize;
-            totalPagesNum = data.totalPages || 0;
+            const typedData = data as { properties?: any[]; total?: number; page?: number; pageSize?: number; totalPages?: number };
+            propertiesArray = typedData.properties || [];
+            totalCount = typedData.total || 0;
+            pageNum = typedData.page || page;
+            pageSizeNum = typedData.pageSize || pageSize;
+            totalPagesNum = typedData.totalPages || 0;
           }
           // Fallback: try to extract properties directly
           else if (Array.isArray(data)) {
             propertiesArray = data;
-          } else if (data.properties && Array.isArray(data.properties)) {
-            propertiesArray = data.properties;
-            totalCount = data.totalCount || data.total || propertiesArray.length;
+          } else if ((data as any).properties && Array.isArray((data as any).properties)) {
+            const typedData = data as { properties?: any[]; totalCount?: number; total?: number };
+            propertiesArray = typedData.properties || [];
+            totalCount = typedData.totalCount || typedData.total || propertiesArray.length;
           }
         }
 

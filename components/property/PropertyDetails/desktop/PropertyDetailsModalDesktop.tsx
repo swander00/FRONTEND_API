@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 import { PropertyDetailsModal as SharedModal } from "@/components/shared";
-import type { Property } from "@/types/property";
+import type { Property, PropertyRoom } from "@/types/property";
 import { toast } from "sonner";
 import { PropertyDetailsHeader } from "./PropertyDetailsHeader";
 import {
@@ -62,9 +62,56 @@ export default function PropertyDetailsModalDesktop({ isOpen, property: rawPrope
           // Extract images from media array or use images field
           const images = (response as PropertyDetailsResponse & { images?: string[] }).images || 
             (response.media || []).map((m: PropertyMediaItem) => m.url || (m as PropertyMediaItem & { MediaURL?: string }).MediaURL).filter(Boolean) as string[];
+          // Normalize features fields: convert string to array if needed
+          const normalizeFeatures = (features: string | string[] | undefined): string[] | undefined => {
+            if (!features) return undefined;
+            if (Array.isArray(features)) return features;
+            return features.split(/[,;|]/).map(f => f.trim()).filter(f => f.length > 0);
+          };
+          
+          // Normalize transactionType to match Property type
+          const normalizeTransactionType = (type: any): 'For Sale' | 'For Lease' | undefined => {
+            if (!type) return undefined;
+            const normalized = String(type).trim();
+            if (normalized === 'For Sale' || normalized === 'For Lease') {
+              return normalized as 'For Sale' | 'For Lease';
+            }
+            if (normalized.toLowerCase().includes('sale') || normalized.toLowerCase().includes('sell')) {
+              return 'For Sale';
+            }
+            if (normalized.toLowerCase().includes('lease') || normalized.toLowerCase().includes('rent')) {
+              return 'For Lease';
+            }
+            return undefined;
+          };
+          
+          // Normalize rooms array to match PropertyRoom[] type
+          const normalizeRooms = (rooms: any): PropertyRoom[] | undefined => {
+            if (!rooms) return undefined;
+            if (!Array.isArray(rooms)) return undefined;
+            return rooms.map((room: any) => ({
+              type: String(room.type || room.Type || ''),
+              level: room.level || room.Level || undefined,
+              dimensions: room.dimensions || room.Dimensions || undefined,
+              measurements: room.measurements || room.Measurements || undefined,
+              description: room.description || room.Description || undefined,
+              features: room.features || room.Features || undefined,
+            })).filter((room: PropertyRoom) => room.type);
+          };
+          
           // Merge the fetched property with the existing one to preserve any additional data
           // Preserve both images array and media array for maximum compatibility
-          setFullProperty({ ...rawProperty, ...response, images, media: response.media } as unknown as Property);
+          setFullProperty({ 
+            ...rawProperty, 
+            ...response, 
+            images, 
+            media: response.media,
+            exteriorFeatures: normalizeFeatures((response as any).exteriorFeatures) ?? rawProperty?.exteriorFeatures,
+            interiorFeatures: normalizeFeatures((response as any).interiorFeatures) ?? rawProperty?.interiorFeatures,
+            primaryImageUrl: (response as any).primaryImageUrl ?? undefined,
+            transactionType: normalizeTransactionType((response as any).transactionType) ?? rawProperty?.transactionType,
+            rooms: normalizeRooms((response as any).rooms) ?? rawProperty?.rooms,
+          } as Property);
         })
         .catch((error) => {
           console.error('Failed to fetch full property details:', error);

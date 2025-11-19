@@ -150,8 +150,12 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
         // Prompt One Tap
         window.google.accounts.id.prompt((notification) => {
           // Handle notification if needed
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            const reason = notification.getNotDisplayedReason() || notification.getSkippedReason();
+          const notDisplayedReason = notification.getNotDisplayedReason();
+          const skippedReason = notification.getSkippedReason();
+          const dismissedReason = notification.getDismissedReason();
+          
+          if (notDisplayedReason || skippedReason || dismissedReason) {
+            const reason = notDisplayedReason || skippedReason || dismissedReason;
             if (reason && reason !== 'browser_not_supported' && reason !== 'invalid_client') {
               // Silently fail - One Tap not available is not an error
               console.debug('Google One Tap not displayed:', reason);

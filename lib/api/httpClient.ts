@@ -48,9 +48,31 @@ export class HttpClient {
   }
 
   /**
+   * Make a PUT request
+   */
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
+    const url = this.buildUrl(endpoint);
+    return this.request<T>(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  /**
+   * Make a DELETE request
+   */
+  async delete<T>(endpoint: string): Promise<T> {
+    const url = this.buildUrl(endpoint);
+    return this.request<T>(url, { method: 'DELETE' });
+  }
+
+  /**
    * Build full URL from endpoint and query parameters
    */
-  private buildUrl(endpoint: string, params?: Record<string, string | number | boolean | string[] | undefined>): string {
+  protected buildUrl(endpoint: string, params?: Record<string, string | number | boolean | string[] | undefined>): string {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     const url = new URL(`${this.config.baseUrl}${cleanEndpoint}`);
 
@@ -77,7 +99,7 @@ export class HttpClient {
   /**
    * Make HTTP request with retry logic
    */
-  private async request<T>(url: string, options: RequestInit): Promise<T> {
+  protected async request<T>(url: string, options: RequestInit): Promise<T> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.config.timeout);
 

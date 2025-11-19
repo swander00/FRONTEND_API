@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import type { Property } from '@/types/property';
+import type { Property, PropertyRoom } from '@/types/property';
 import { toast } from 'sonner';
 import { PropertyLikeButton, PropertySaveButton } from '@/components/shared/buttons';
 import {
@@ -131,6 +131,20 @@ export default function PropertyDetailsModalMobile({
             return undefined;
           };
           
+          // Normalize rooms array to match PropertyRoom[] type
+          const normalizeRooms = (rooms: any): PropertyRoom[] | undefined => {
+            if (!rooms) return undefined;
+            if (!Array.isArray(rooms)) return undefined;
+            return rooms.map((room: any) => ({
+              type: String(room.type || room.Type || ''),
+              level: room.level || room.Level || undefined,
+              dimensions: room.dimensions || room.Dimensions || undefined,
+              measurements: room.measurements || room.Measurements || undefined,
+              description: room.description || room.Description || undefined,
+              features: room.features || room.Features || undefined,
+            })).filter((room: PropertyRoom) => room.type);
+          };
+          
           setFullProperty({ 
             ...rawProperty, 
             ...response, 
@@ -142,7 +156,9 @@ export default function PropertyDetailsModalMobile({
             primaryImageUrl: (response as any).primaryImageUrl ?? undefined,
             // Normalize transactionType to match Property type
             transactionType: normalizeTransactionType((response as any).transactionType) ?? rawProperty?.transactionType,
-          });
+            // Normalize rooms to match PropertyRoom[] type
+            rooms: normalizeRooms((response as any).rooms) ?? rawProperty?.rooms,
+          } as Property);
         })
         .catch((error) => {
           console.error('Failed to fetch full property details:', error);
@@ -710,7 +726,7 @@ export default function PropertyDetailsModalMobile({
 
         {/* Location Map Section */}
         <div className="px-3 py-4 border-t border-gray-200">
-          <PropertyLocationMap property={property} />
+          <PropertyLocationMap property={resolvedProperty} />
         </div>
 
         {/* Contact Agent Section - Full width at the end */}
