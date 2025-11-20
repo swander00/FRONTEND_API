@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProperties } from '@/hooks/useProperties';
 import { PropertyCard } from '@/components/property/PropertyCard';
@@ -26,11 +26,11 @@ export function FeaturedProperties() {
   const router = useRouter();
   const [selectedPropertyType, setSelectedPropertyType] = useState<string | null>(null);
 
-  // Build filters based on selected property type
-  const filters: FiltersState = {
+  // Build filters based on selected property type - memoized to prevent unnecessary re-renders
+  const filters: FiltersState = useMemo(() => ({
     ...DEFAULT_FILTERS_STATE,
     propertyTypes: selectedPropertyType ? [selectedPropertyType] : [],
-  };
+  }), [selectedPropertyType]);
 
   const { properties, loading } = useProperties({
     page: 1,
