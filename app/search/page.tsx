@@ -19,6 +19,8 @@ import { useMapProperties, type MapBounds } from '@/hooks/useMapProperties';
 import { api, type PropertyDetailsResponse, type PropertyMediaItem } from '@/lib/api';
 import type { PropertyRoom } from '@/types/property';
 import { DEFAULT_FILTERS_STATE } from '@/components/search/FiltersContainer/FiltersContext';
+import { SaveSearchModal } from '@/components/search/SaveSearchModal';
+import { useAuth } from '@/hooks/useAuth';
 
 // Default bounds for Toronto area (used when map view is first loaded)
 const DEFAULT_MAP_BOUNDS: MapBounds = {
@@ -231,8 +233,11 @@ function SearchPageContent() {
   const [filtersSnapshot, setFiltersSnapshot] = useState<FiltersState | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(DEFAULT_MAP_BOUNDS);
+  const [isSaveSearchModalOpen, setIsSaveSearchModalOpen] = useState(false);
+  const [isSaveSearchModalClosing, setIsSaveSearchModalClosing] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const responsivePageSize = useResponsivePageSize();
+  const { isAuthenticated } = useAuth();
   
   // Get initial status from URL
   const urlStatusParam = searchParams.get('status');
@@ -378,9 +383,51 @@ function SearchPageContent() {
   }, [currentPage, view]);
 
   const handleSaveSearch = () => {
-    // TODO: Implement save search functionality
-    console.log('Save search');
+    if (!isAuthenticated) {
+      // Could show auth modal here if needed
+      return;
+    }
+    setIsSaveSearchModalClosing(false);
+    setIsSaveSearchModalOpen(true);
   };
+
+  const closeSaveSearchModal = useCallback(() => {
+    setIsSaveSearchModalClosing(true);
+    window.setTimeout(() => {
+      setIsSaveSearchModalOpen(false);
+      setIsSaveSearchModalClosing(false);
+    }, 220);
+  }, []);
+
+  // Restore filters from saved search if present in sessionStorage
+  useEffect(() => {
+    const savedFilters = sessionStorage.getItem('savedSearchFilters');
+    if (savedFilters) {
+      try {
+        const filters = JSON.parse(savedFilters) as FiltersState;
+        setFiltersSnapshot(filters);
+        sessionStorage.removeItem('savedSearchFilters');
+        // Update URL status if needed
+        if (filters.status) {
+          const statusToUrlMap: Record<string, string> = {
+            'For Sale': 'for-sale',
+            'For Lease': 'for-lease',
+            'Sold': 'sold',
+            'Leased': 'leased',
+            'Removed': 'removed',
+          };
+          const urlStatus = statusToUrlMap[filters.status];
+          if (urlStatus) {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set('status', urlStatus);
+            router.replace(`/search?${params.toString()}`, { scroll: false });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to parse saved search filters:', err);
+      }
+    }
+  }, [searchParams, router]);
 
   const handleSearchSubmit = useCallback((value: string) => {
     setAppliedSearchTerm(value);
@@ -516,6 +563,16 @@ function SearchPageContent() {
             isOpen={!!selectedProperty}
             property={selectedProperty ?? undefined}
             onClose={handleClosePropertyModal}
+          />
+        )}
+
+        {isAuthenticated && (
+          <SaveSearchModal
+            isOpen={isSaveSearchModalOpen}
+            onClose={closeSaveSearchModal}
+            isClosing={isSaveSearchModalClosing}
+            filters={filtersSnapshot || DEFAULT_FILTERS_STATE}
+            searchTerm={appliedSearchTerm}
           />
         )}
       </PageContainer>
