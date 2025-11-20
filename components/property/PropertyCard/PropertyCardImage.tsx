@@ -47,31 +47,31 @@ export function PropertyCardImage({
                        property.images && property.images.length > 0;
 
   return (
-    <div className="relative w-full h-64 bg-gray-200 rounded-t-lg overflow-hidden group">
+    <div className="relative w-full h-64 bg-gray-200 rounded-t-lg overflow-hidden group pointer-events-none">
       {hasValidImage ? (
         <Image
           src={imageUrl}
           alt={`${addressText} property`}
           fill
-          className="object-cover"
+          className="object-cover pointer-events-none"
           sizes="(max-width: 768px) 100vw, 50vw"
           priority={priority}
           unoptimized
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400">
+        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 pointer-events-none">
           <Icon name="home" className="h-16 w-16 text-gray-500" />
         </div>
       )}
 
       {/* Top Left - Badges */}
-      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
+      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 pointer-events-auto">
         <MlsStatusBadge status={property.status ?? 'Active'} />
         <PropertyTypeBadge type={property.propertyType ?? 'Property'} />
       </div>
 
       {/* Top Right - Favorite */}
-      <div className="absolute top-2 right-2 z-10 flex gap-1">
+      <div className="absolute top-2 right-2 z-10 flex gap-1 pointer-events-auto">
         <IconButton
           icon={
             <Icon
@@ -96,7 +96,7 @@ export function PropertyCardImage({
 
       {/* Bottom Center - Image Carousel Dots */}
       {property.images && property.images.length > 1 && (
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-10 flex gap-1">
+        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-10 flex gap-1 pointer-events-auto">
           {property.images.map((_, index) => (
             <button
               key={index}
@@ -117,7 +117,7 @@ export function PropertyCardImage({
 
       {/* Bottom Right - Virtual Tour Button */}
       {property.hasVirtualTour && (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div className="pointer-events-auto" onClick={(e) => e.stopPropagation()}>
           <VirtualTourButton
             imageCount={property.images.length}
             onClick={onTour}
