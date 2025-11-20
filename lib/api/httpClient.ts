@@ -74,26 +74,65 @@ export class HttpClient {
    */
   protected buildUrl(endpoint: string, params?: Record<string, string | number | boolean | string[] | undefined>): string {
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const url = new URL(`${this.config.baseUrl}${cleanEndpoint}`);
-
-    if (params) {
-      Object.entries(params).forEach(([key, value]) => {
-        if (value === undefined || value === null) {
-          return; // Skip undefined/null values
-        }
-
-        if (Array.isArray(value)) {
-          // Handle array parameters (e.g., city=Toronto&city=Mississauga)
-          value.forEach((item) => {
-            url.searchParams.append(key, String(item));
-          });
-        } else {
-          url.searchParams.append(key, String(value));
-        }
-      });
+    
+    // Handle empty baseUrl (relative URLs) - use window.location.origin as base
+    // This is needed because URL constructor requires an absolute URL
+    let baseUrl = this.config.baseUrl;
+    if (!baseUrl || baseUrl.trim() === '') {
+      if (typeof window !== 'undefined' && window.location?.origin) {
+        baseUrl = window.location.origin;
+      } else {
+        // SSR case or invalid origin - return relative URL for fetch to handle
+        // Fetch API can handle relative URLs, so we'll construct the URL differently
+        const relativeUrl = cleanEndpoint + (params ? this.buildQueryString(params) : '');
+        return relativeUrl;
+      }
     }
+    
+    // Validate baseUrl before constructing URL
+    try {
+      const url = new URL(`${baseUrl}${cleanEndpoint}`);
 
-    return url.toString();
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (value === undefined || value === null) {
+            return; // Skip undefined/null values
+          }
+
+          if (Array.isArray(value)) {
+            // Handle array parameters (e.g., city=Toronto&city=Mississauga)
+            value.forEach((item) => {
+              url.searchParams.append(key, String(item));
+            });
+          } else {
+            url.searchParams.append(key, String(value));
+          }
+        });
+      }
+
+      return url.toString();
+    } catch (error) {
+      // If URL construction fails, fall back to relative URL
+      console.warn('Failed to construct absolute URL, using relative URL:', error);
+      return cleanEndpoint + (params ? this.buildQueryString(params) : '');
+    }
+  }
+
+  /**
+   * Build query string from params (helper for relative URLs)
+   */
+  private buildQueryString(params: Record<string, string | number | boolean | string[] | undefined>): string {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      if (Array.isArray(value)) {
+        value.forEach((item) => searchParams.append(key, String(item)));
+      } else {
+        searchParams.append(key, String(value));
+      }
+    });
+    const queryString = searchParams.toString();
+    return queryString ? `?${queryString}` : '';
   }
 
   /**

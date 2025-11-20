@@ -72,48 +72,8 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
-function buildUrl(baseUrl: string, endpoint: string, params?: Record<string, string | number | boolean | string[] | undefined>): string {
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  const url = new URL(`${baseUrl.replace(/\/$/, '')}${cleanEndpoint}`);
-
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === undefined || value === null) return;
-      if (Array.isArray(value)) {
-        value.forEach((item) => url.searchParams.append(key, String(item)));
-      } else {
-        url.searchParams.append(key, String(value));
-      }
-    });
-  }
-
-  return url.toString();
-}
-
-async function makeRequest<T>(url: string, options: RequestInit): Promise<T> {
-  const response = await fetch(url, options);
-  
-  if (!response.ok) {
-    let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      if (errorData.error) {
-        errorMessage = errorData.error.message || errorData.message || errorMessage;
-      }
-    } catch {
-      // If response is not JSON, use status text
-    }
-    const error = new Error(errorMessage);
-    (error as any).status = response.status;
-    throw error;
-  }
-
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json();
-}
+// Note: buildUrl and makeRequest are not used here - they're legacy code
+// The AuthenticatedHttpClient uses the parent HttpClient's methods
 
 /**
  * Get authenticated client instance (singleton)

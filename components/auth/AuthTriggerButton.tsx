@@ -115,21 +115,32 @@ export function AuthTriggerButton({
         // Still continue with cleanup even if there's an error
       }
       
-      // Clear Google One Tap state if available
-      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-        try {
-          // Disable auto-select to prevent One Tap from showing immediately
-          window.google.accounts.id.disableAutoSelect();
-          // Clear any stored credentials
-          window.google.accounts.id.cancel();
-        } catch (err) {
-          console.debug('Error clearing Google One Tap state:', err);
-        }
-      }
-      
-      // Redirect to home page after sign out
-      // The auth state change listener will handle UI updates
+      // Clear Google OAuth cookies and state
       if (typeof window !== 'undefined') {
+        // Clear Google state cookie (g_state)
+        const hostname = window.location.hostname;
+        const domainParts = hostname.split('.');
+        const domainsToClear = [
+          hostname,
+          domainParts.length > 1 ? '.' + domainParts.slice(-2).join('.') : hostname
+        ];
+        
+        domainsToClear.forEach(domain => {
+          document.cookie = `g_state=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT;domain=${domain}`;
+          document.cookie = `g_state=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT`;
+        });
+        
+        // Clear Google One Tap state if available
+        if (window.google?.accounts?.id) {
+          try {
+            window.google.accounts.id.disableAutoSelect();
+            window.google.accounts.id.cancel();
+          } catch (err) {
+            console.debug('Error clearing Google One Tap state:', err);
+          }
+        }
+        
+        // Redirect to home page after sign out
         window.location.href = '/';
       }
     } catch (err) {

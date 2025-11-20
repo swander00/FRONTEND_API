@@ -153,21 +153,40 @@ export function useAuth() {
     }
 
     try {
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
       // Reset authenticated client to clear any cached tokens
       resetAuthenticatedClient();
       
-      // Clear Google One Tap state if available
-      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
-        try {
-          // Disable auto-select to prevent One Tap from showing immediately after sign out
-          window.google.accounts.id.disableAutoSelect();
-          // Cancel any pending One Tap prompts
-          window.google.accounts.id.cancel();
-        } catch (err) {
-          console.debug('Error clearing Google One Tap state:', err);
+      // Clear Google OAuth session and cookies
+      if (typeof window !== 'undefined') {
+        // Clear Google state cookie (g_state) which tracks One Tap state
+        const hostname = window.location.hostname;
+        const domainParts = hostname.split('.');
+        
+        // Clear cookie for current domain and parent domains
+        const domainsToClear = [
+          hostname,
+          domainParts.length > 1 ? '.' + domainParts.slice(-2).join('.') : hostname
+        ];
+        
+        domainsToClear.forEach(domain => {
+          document.cookie = `g_state=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT;domain=${domain}`;
+          document.cookie = `g_state=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT`;
+        });
+        
+        // Clear Google One Tap state if available
+        if (window.google?.accounts?.id) {
+          try {
+            // Disable auto-select to prevent One Tap from showing immediately after sign out
+            window.google.accounts.id.disableAutoSelect();
+            // Cancel any pending One Tap prompts
+            window.google.accounts.id.cancel();
+          } catch (err) {
+            console.debug('Error clearing Google One Tap state:', err);
+          }
         }
       }
       
