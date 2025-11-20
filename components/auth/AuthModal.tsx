@@ -39,8 +39,8 @@ export function AuthModal({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [message, setMessage] = useState<MessageState>(null);
 
   useEffect(() => {
@@ -144,17 +144,74 @@ export function AuthModal({
     }
   };
 
-  const handleForgotPassword = async () => {
-    if (!email) {
-      setMessage({ tone: 'error', text: 'Please enter your email before requesting a reset link.' });
-      return;
-    }
-
+  const handleGoogleSignIn = async () => {
     if (!supabase) {
       setMessage({
         tone: 'error',
         text: 'Authentication service is still initializing. Please try again in a moment.',
       });
+      return;
+    }
+
+    try {
+      setIsGoogleLoading(true);
+      setMessage({ tone: 'info', text: 'Redirecting to Google…' });
+
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined;
+      
+      // Verify environment variables are set
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+        throw new Error('Supabase URL is not configured. Please check your environment variables.');
+      }
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        console.error('Google OAuth error:', error);
+        throw error;
+      }
+
+      // If we get a URL back, Supabase is redirecting (this is expected)
+      if (data?.url) {
+        // Redirect will happen automatically
+        return;
+      }
+
+      // Note: User will be redirected, so we don't need to handle success here
+    } catch (error) {
+      setIsGoogleLoading(false);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Google sign-in failed:', error);
+      
+      // Provide more helpful error messages
+      let userFriendlyMessage = 'Unable to sign in with Google. ';
+      if (errorMessage.includes('redirect_uri_mismatch')) {
+        userFriendlyMessage += 'Redirect URI mismatch. Please check Google Cloud Console configuration.';
+      } else if (errorMessage.includes('invalid_client')) {
+        userFriendlyMessage += 'Invalid client configuration. Please verify Client ID matches in Google Cloud Console and Supabase.';
+      } else {
+        userFriendlyMessage += 'Please check the browser console for details.';
+      }
+      
+      setMessage({
+        tone: 'error',
+        text: userFriendlyMessage,
+      });
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setMessage({ tone: 'error', text: 'Please enter your email before requesting a reset link.' });
       return;
     }
 
@@ -188,40 +245,6 @@ export function AuthModal({
       });
     } finally {
       setIsResettingPassword(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    if (!supabase) {
-      setMessage({
-        tone: 'error',
-        text: 'Authentication service is still initializing. Please try again in a moment.',
-      });
-      return;
-    }
-
-    try {
-      setIsGoogleLoading(true);
-      setMessage({ tone: 'info', text: 'Redirecting to Google…' });
-
-      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo,
-          scopes: 'email profile',
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-    } catch (error) {
-      setMessage({
-        tone: 'error',
-        text: error instanceof Error ? error.message : 'Google sign-in failed. Please try again.',
-      });
-      setIsGoogleLoading(false);
     }
   };
 
@@ -313,7 +336,7 @@ export function AuthModal({
               value={fullName}
               onChange={(event) => setFullName(event.target.value)}
               placeholder="Taylor Jones"
-          disabled={isSubmitting || isGoogleLoading || !isSupabaseReady}
+          disabled={isSubmitting || !isSupabaseReady}
             />
           )}
 
@@ -325,7 +348,7 @@ export function AuthModal({
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder="you@example.com"
-            disabled={isSubmitting || isGoogleLoading || !isSupabaseReady}
+            disabled={isSubmitting || !isSupabaseReady}
           />
 
           <Input
@@ -363,43 +386,49 @@ export function AuthModal({
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
+            <div className="w-full border-t border-gray-300" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-2 text-gray-400">or continue with</span>
+            <span className="bg-white px-2 text-gray-500">Or continue with</span>
           </div>
         </div>
 
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           size="lg"
-          className="rounded-full border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50"
+          className="rounded-full w-full flex items-center justify-center gap-3 border border-gray-300 hover:bg-gray-50"
           onClick={handleGoogleSignIn}
-          disabled={isGoogleLoading || isSubmitting || !isSupabaseReady}
+          disabled={isSubmitting || isGoogleLoading || !isSupabaseReady}
         >
-          <span className="mr-2 flex h-5 w-5 items-center justify-center">
-            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-              <path
-                d="M21.35 11.1h-9.17v2.96h5.27c-.22 1.26-.92 2.33-1.96 3.04v2.53h3.17c1.86-1.72 2.93-4.26 2.93-7.24 0-.7-.06-1.23-.14-1.82z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12.18 22c2.7 0 4.96-.9 6.61-2.37l-3.17-2.53c-.9.6-2.06.96-3.44.96-2.64 0-4.87-1.78-5.66-4.16H3.22v2.6C4.86 19.92 8.27 22 12.18 22z"
-                fill="#34A853"
-              />
-              <path
-                d="M6.52 13.9c-.2-.6-.32-1.24-.32-1.9s.12-1.3.32-1.9V7.5H3.22A9.78 9.78 0 002.36 12c0 1.56.36 3.03.86 4.5l3.3-2.6z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12.18 5.5c1.47 0 2.79.5 3.84 1.48l2.87-2.87C17.13 2.94 14.87 2 12.18 2 8.27 2 4.86 4.08 3.22 7.5l3.3 2.6c.79-2.38 3.02-4.6 5.66-4.6z"
-                fill="#EA4335"
-              />
-              <path d="M2 2h20v20H2z" fill="none" />
-            </svg>
-          </span>
-          {isGoogleLoading ? 'Redirecting…' : 'Continue with Google'}
+          {isGoogleLoading ? (
+            <>
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+              <span>Connecting…</span>
+            </>
+          ) : (
+            <>
+              <svg className="h-5 w-5" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              <span>Continue with Google</span>
+            </>
+          )}
         </Button>
 
         {message && (

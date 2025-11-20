@@ -50,7 +50,7 @@ export default function AuthCallbackPage() {
           }
         };
 
-        // Wait for OAuth callback to process (Supabase handles URL hash fragments)
+        // Wait for auth callback to process (Supabase handles URL hash fragments)
         // Use onAuthStateChange to wait for session to be established
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {

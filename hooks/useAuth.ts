@@ -132,21 +132,6 @@ export function useAuth() {
     };
   }, [supabase, checkAuth]);
 
-  const signInWithGoogle = useCallback(async () => {
-    if (!supabase) {
-      throw new Error('Supabase client not initialized');
-    }
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) throw error;
-  }, [supabase]);
-
   const signOut = useCallback(async () => {
     if (!supabase) {
       throw new Error('Supabase client not initialized');
@@ -159,36 +144,6 @@ export function useAuth() {
       
       // Reset authenticated client to clear any cached tokens
       resetAuthenticatedClient();
-      
-      // Clear Google OAuth session and cookies
-      if (typeof window !== 'undefined') {
-        // Clear Google state cookie (g_state) which tracks One Tap state
-        const hostname = window.location.hostname;
-        const domainParts = hostname.split('.');
-        
-        // Clear cookie for current domain and parent domains
-        const domainsToClear = [
-          hostname,
-          domainParts.length > 1 ? '.' + domainParts.slice(-2).join('.') : hostname
-        ];
-        
-        domainsToClear.forEach(domain => {
-          document.cookie = `g_state=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT;domain=${domain}`;
-          document.cookie = `g_state=;path=/;expires=Thu, 01 Jan 1970 00:00:01 GMT`;
-        });
-        
-        // Clear Google One Tap state if available
-        if (window.google?.accounts?.id) {
-          try {
-            // Disable auto-select to prevent One Tap from showing immediately after sign out
-            window.google.accounts.id.disableAutoSelect();
-            // Cancel any pending One Tap prompts
-            window.google.accounts.id.cancel();
-          } catch (err) {
-            console.debug('Error clearing Google One Tap state:', err);
-          }
-        }
-      }
       
       setState({ status: 'unauthenticated' });
     } catch (err) {
@@ -243,7 +198,6 @@ export function useAuth() {
     isOnboardingRequired: state.status === 'onboarding_required',
     user: state.status === 'authenticated' || state.status === 'onboarding_required' ? state.user : null,
     profile: state.status === 'authenticated' ? state.profile : null,
-    signInWithGoogle,
     signOut,
     refreshProfile,
   };
