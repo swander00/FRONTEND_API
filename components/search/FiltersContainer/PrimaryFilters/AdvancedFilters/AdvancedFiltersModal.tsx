@@ -313,10 +313,10 @@ export const AdvancedButton = forwardRef<HTMLButtonElement, AdvancedButtonProps>
     const showBadge = typeof badgeCount === "number" && badgeCount > 0;
 
     const baseClasses =
-      "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2";
+      "group inline-flex h-12 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60 active:scale-[0.98]";
     const states = [
-      "border-slate-200 bg-white text-slate-700 hover:border-blue-500 hover:text-blue-600",
-      isActive && "border-blue-500 bg-blue-50 text-blue-600 hover:border-blue-500 hover:text-blue-600",
+      "border-slate-200/80 bg-gradient-to-r from-white via-slate-50/50 to-white text-slate-700 hover:border-blue-500 hover:text-blue-600 hover:from-blue-50/50 hover:via-blue-50/30 hover:to-blue-50/50",
+      isActive && "border-blue-500 bg-gradient-to-r from-blue-50 via-blue-100/50 to-blue-50 text-blue-600 hover:border-blue-500 hover:text-blue-600",
       className,
     ]
       .filter(Boolean)
@@ -330,12 +330,24 @@ export const AdvancedButton = forwardRef<HTMLButtonElement, AdvancedButtonProps>
         aria-pressed={isActive}
         {...props}
       >
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-600">
-          ✦
+        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-xs font-semibold text-white shadow-md shadow-blue-500/40 transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-blue-500/50">
+          <svg
+            className="h-3.5 w-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
+            />
+          </svg>
         </span>
-        <span>{label}</span>
+        <span className="leading-tight">{label}</span>
         {showBadge ? (
-          <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-2 text-[11px] font-semibold text-white">
+          <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-2 text-[11px] font-semibold text-white shadow-md shadow-blue-500/40">
             {badgeCount}
           </span>
         ) : null}

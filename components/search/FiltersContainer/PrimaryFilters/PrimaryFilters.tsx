@@ -301,8 +301,8 @@ export function PrimaryFilters() {
 
   return (
     <>
-      <div className="flex items-center gap-2 md:gap-3 overflow-x-auto whitespace-nowrap">
-        <div className="flex h-12 items-center overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm">
+      <div className="flex items-center gap-3 md:gap-4 overflow-x-auto whitespace-nowrap pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex h-12 items-center overflow-hidden rounded-full border border-gray-300 bg-white shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60">
           <StatusButton
             ref={statusButtonRef}
             label={statusSummary.label}
@@ -320,7 +320,7 @@ export function PrimaryFilters() {
           />
         </div>
 
-        <div className="flex h-12 overflow-hidden rounded-full border border-gray-200 bg-white shadow-sm divide-x divide-gray-200">
+        <div className="flex h-12 overflow-hidden rounded-full border border-gray-200/80 bg-white shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60 divide-x divide-gray-300">
           <CityButton
             ref={cityButtonRef}
             label={cityIsActive ? citySummary : 'City'}

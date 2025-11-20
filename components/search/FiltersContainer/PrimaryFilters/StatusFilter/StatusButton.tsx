@@ -36,19 +36,22 @@ export const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(fun
       type="button"
       onClick={onClick}
       className={cn(
-        'flex h-12 w-[135px] items-center justify-center gap-2 rounded-full rounded-r-none px-5 text-sm font-medium transition-colors',
+        'flex h-12 w-[135px] items-center justify-center gap-2 rounded-full rounded-r-none px-5 text-sm font-semibold transition-all duration-200',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0',
         isActive
           ? activeClassName
-          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600 focus-visible:ring-blue-400',
+          : 'text-gray-700 hover:bg-blue-50/80 hover:text-blue-600 focus-visible:ring-blue-400 active:scale-[0.98]',
       )}
       style={style}
     >
       <span
-        className="inline-flex h-2.5 w-2.5 rounded-full border border-white/60"
+        className={cn(
+          'inline-flex h-2.5 w-2.5 rounded-full border transition-all duration-200',
+          isActive ? 'border-white/70 shadow-sm' : 'border-gray-300/60',
+        )}
         style={{ backgroundColor: dotColor }}
       />
-      <span className="text-center">{label}</span>
+      <span className="text-center leading-tight">{label}</span>
     </button>
   );
 });

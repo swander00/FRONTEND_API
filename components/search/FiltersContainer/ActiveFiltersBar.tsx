@@ -2,20 +2,17 @@
 
 import { useMemo } from 'react';
 import { FilterTag } from '@/components/ui/tags/FilterTag';
-import { Button } from '@/components/ui/buttons/Button';
 import { DEFAULT_FILTERS_STATE, useFiltersDispatch, useFiltersState } from './FiltersContext';
 
 export type ActiveFiltersBarProps = {
   quickFilters: string[];
   onQuickFilterRemove: (tag: string) => void;
-  onSaveSearch: () => void;
   onClearAll: () => void;
 };
 
 export function ActiveFiltersBar({
   quickFilters,
   onQuickFilterRemove,
-  onSaveSearch,
   onClearAll,
 }: ActiveFiltersBarProps) {
   const filters = useFiltersState();
@@ -184,21 +181,16 @@ export function ActiveFiltersBar({
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl bg-white px-4 py-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-gray-700">Active filters:</span>
         {activeItems.map((item) => (
           <FilterTag key={item.label} label={item.label} onRemove={item.onRemove} />
         ))}
-      </div>
-      <div className="flex w-full flex-wrap items-center gap-3 sm:ml-auto sm:w-auto sm:justify-end">
-        <Button variant="secondary" size="sm" onClick={onSaveSearch}>
-          Save Search
-        </Button>
         <button
           type="button"
           onClick={onClearAll}
-          className="text-sm font-medium text-gray-700 underline underline-offset-2 transition hover:text-gray-900"
+          className="ml-2 text-sm font-medium text-gray-700 underline underline-offset-2 transition hover:text-gray-900"
         >
           Clear all
         </button>

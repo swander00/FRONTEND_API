@@ -74,99 +74,52 @@ function FiltersContainerInner({
   };
 
   const hasQuickFilters = useMemo(() => quickFilters.length > 0, [quickFilters.length]);
-  const hasSelections = useMemo(() => {
-    const defaults = DEFAULT_FILTERS_STATE;
-    const price = filters.price;
-    const beds = filters.beds;
-    const baths = filters.baths;
-    const advanced = filters.advanced;
-    const advancedDefaults = defaults.advanced;
 
-    const hasPrimarySelections =
-      filters.status !== defaults.status ||
-      filters.timeRange !== defaults.timeRange ||
-      filters.cities.length > 0 ||
-      filters.propertyTypes.length > 0 ||
-      price.preset !== 'Any' ||
-      price.min != null ||
-      price.max != null ||
-      beds.preset !== 'Any' ||
-      beds.min != null ||
-      beds.max != null ||
-      beds.exact != null ||
-      baths.preset !== 'Any' ||
-      baths.min != null ||
-      baths.max != null ||
-      baths.exact != null;
-
-    const hasAdvancedSelections =
-      advanced.keywords.length > 0 ||
-      advanced.propertyClasses.length > 0 ||
-      advanced.squareFootage.min !== advancedDefaults.squareFootage.min ||
-      advanced.squareFootage.max !== advancedDefaults.squareFootage.max ||
-      advanced.houseStyle !== advancedDefaults.houseStyle ||
-      advanced.lotFrontage !== advancedDefaults.lotFrontage ||
-      advanced.lotDepth !== advancedDefaults.lotDepth ||
-      advanced.maintenanceFee.preset !== advancedDefaults.maintenanceFee.preset ||
-      advanced.maintenanceFee.min != null ||
-      advanced.maintenanceFee.max != null ||
-      advanced.propertyTax.preset !== advancedDefaults.propertyTax.preset ||
-      advanced.propertyTax.min != null ||
-      advanced.propertyTax.max != null ||
-      advanced.daysOnMarket.preset !== advancedDefaults.daysOnMarket.preset ||
-      advanced.daysOnMarket.min != null ||
-      advanced.daysOnMarket.max != null ||
-      advanced.garageParking.preset !== advancedDefaults.garageParking.preset ||
-      advanced.garageParking.min != null ||
-      advanced.garageParking.max != null ||
-      advanced.totalParking.preset !== advancedDefaults.totalParking.preset ||
-      advanced.totalParking.min != null ||
-      advanced.totalParking.max != null ||
-      advanced.basementFeatures.length > 0 ||
-      advanced.propertyAge !== advancedDefaults.propertyAge ||
-      advanced.swimmingPool !== advancedDefaults.swimmingPool ||
-      advanced.waterfront !== advancedDefaults.waterfront ||
-      advanced.openHouse !== advancedDefaults.openHouse;
-
-    return hasPrimarySelections || hasAdvancedSelections || hasQuickFilters;
-  }, [filters, hasQuickFilters]);
-
-  const renderActionButtons = () =>
-    !hasSelections ? null : (
-      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap sm:justify-end md:ml-auto md:gap-3">
-        <Button
-          type="button"
-          variant="ghost"
-          size="md"
-          onClick={onSaveSearch}
-        >
-          Save Search
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="md"
-          onClick={handleClearAll}
-        >
-          Reset
-        </Button>
-      </div>
-    );
+  const SaveSearchButton = () => (
+    <button
+      type="button"
+      onClick={onSaveSearch}
+      className="group inline-flex h-12 items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 active:scale-100"
+    >
+      <svg
+        className="h-4 w-4 transition-transform duration-200 group-hover:scale-110"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2.5}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
+        />
+      </svg>
+      <span>Save Search</span>
+    </button>
+  );
 
   return (
     <div className={cn('space-y-5', className)}>
       {primaryHeaderSlot ? (
         <div className="flex flex-col gap-3 md:flex-row md:flex-nowrap md:items-center md:gap-4">
           <div className="w-full md:w-[400px]">{primaryHeaderSlot}</div>
-          <div className="flex-1 md:flex-none">
-            <PrimaryFilters />
+          <div className="flex flex-1 items-center gap-6">
+            <div className="flex-1 md:flex-none">
+              <PrimaryFilters />
+            </div>
+            <div className="md:block">
+              <SaveSearchButton />
+            </div>
           </div>
-          {renderActionButtons()}
         </div>
       ) : (
-        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-4">
-          <PrimaryFilters />
-          {renderActionButtons()}
+        <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-6">
+          <div className="flex-1">
+            <PrimaryFilters />
+          </div>
+          <div className="md:ml-auto">
+            <SaveSearchButton />
+          </div>
         </div>
       )}
 
@@ -175,7 +128,6 @@ function FiltersContainerInner({
       <ActiveFiltersBar
         quickFilters={quickFilters}
         onQuickFilterRemove={handleQuickRemove}
-        onSaveSearch={onSaveSearch}
         onClearAll={handleClearAll}
       />
 
