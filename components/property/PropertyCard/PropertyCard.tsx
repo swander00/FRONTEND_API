@@ -19,12 +19,19 @@ export function PropertyCard({
   priority = false,
 }: PropertyCardProps) {
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only trigger if click didn't come from a button or interactive element
+    console.log('[PropertyCard] Card clicked - target:', e.target);
+    console.log('[PropertyCard] Card clicked - currentTarget:', e.currentTarget);
+    
+    // Check if click came from a button or interactive element
     const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('a') || target.closest('[role="button"]')) {
+    const isButton = target.closest('button') || target.closest('a') || target.closest('[role="button"]');
+    
+    if (isButton) {
+      console.log('[PropertyCard] Click came from button, ignoring');
       return;
     }
-    console.log('[PropertyCard] Card clicked:', property);
+    
+    console.log('[PropertyCard] Card clicked - triggering onClick');
     onClick?.();
   };
 
