@@ -4,6 +4,7 @@ import { Icon } from "@/components/ui/icons/Icon";
 import { formatBedroomCount, formatCurrency, formatParkingSpaces, formatSquareFootageRange } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { Property } from "@/types/property";
+import { getStatusTimestampDisplay } from "@/lib/utils/statusPrefix";
 import Image from "next/image";
 import { KeyboardEvent } from "react";
 
@@ -20,8 +21,9 @@ interface PopUpInfoProps {
 
 export function PopUpInfo({ property, address, onViewDetails }: PopUpInfoProps) {
   const priceDisplay = formatCurrency(property.price);
-  const listedDate = toISODate(property.listedAt);
-  const status = property.status ?? "For Sale";
+  // Use new status prefix + timestamp display logic
+  const listedDisplay = getStatusTimestampDisplay(property);
+  const status = property.status ?? property.mlsStatus ?? "For Sale";
   const statusClasses = getStatusClasses(status);
   const primaryImage = property.images[0];
   const bedroomsDisplay = formatBedroomCount(property.bedrooms) ?? "—";
@@ -104,9 +106,9 @@ export function PopUpInfo({ property, address, onViewDetails }: PopUpInfoProps) 
           <span className="text-sm font-semibold uppercase tracking-wide text-slate-700">
             {property.propertySubType}
           </span>
-          {listedDate && (
+          {listedDisplay && (
             <span className="text-sm font-medium text-slate-500">
-              {listedDate}
+              {listedDisplay}
             </span>
           )}
         </div>
@@ -127,14 +129,6 @@ function FeatureItem({ icon, value }: FeatureItemProps) {
       <span className="text-base font-medium text-slate-700">{value}</span>
     </div>
   );
-}
-
-function toISODate(date: Date | string) {
-  const value = typeof date === "string" ? new Date(date) : date;
-  if (!(value instanceof Date) || Number.isNaN(value.valueOf())) {
-    return undefined;
-  }
-  return value.toISOString().slice(0, 10);
 }
 
 function getStatusClasses(status: string) {

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { formatCurrency } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
+import { getStatusPrefix } from '@/lib/utils/statusPrefix';
 
 type ListingSuggestion = {
   id: string;
@@ -16,8 +17,17 @@ type ListingSuggestion = {
   priceChangeColor?: string;
   statusLabel?: string;
   statusVariant?: 'new' | 'conditional' | 'price-change' | 'sold';
-  dom?: number;
-  domLabel?: string;
+  mlsStatus?: string;
+  status?: string;
+  originalEntryTimestamp?: string;
+  statusDates?: {
+    purchaseContractDate?: string;
+    suspendedDate?: string;
+    terminatedDate?: string;
+    expirationDate?: string;
+    withdrawnDate?: string;
+    unavailableDate?: string;
+  };
   mlsNumber?: string;
   beds?: number;
   baths?: number;
@@ -135,8 +145,10 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
     priceChangeColor,
     statusLabel,
     statusVariant,
-    dom,
-    domLabel,
+    mlsStatus,
+    status,
+    originalEntryTimestamp,
+    statusDates,
     mlsNumber,
     beds,
     baths,
@@ -157,13 +169,54 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
     (typeof price === 'number' ? formatCurrency(price) : undefined) ??
     '';
 
-  const listingAgeLabel =
-    domLabel ??
-    (typeof dom === 'number'
-      ? dom === 0
-        ? 'New'
-        : `${dom} ${dom === 1 ? 'day ago' : 'days ago'}`
-      : undefined);
+  // Get status timestamp display using status prefix helper
+  // Determine which timestamp to use based on status
+  const normalizedStatus = (mlsStatus || status || '').toLowerCase().trim();
+  let timestamp: string | null | undefined = null;
+
+  // For Sale and For Lease: use OriginalEntryTimestamp
+  if (
+    normalizedStatus === 'for sale' ||
+    normalizedStatus === 'for lease' ||
+    normalizedStatus === 'for sub-lease' ||
+    normalizedStatus === 'sold conditional' ||
+    normalizedStatus === 'sold conditional escape' ||
+    normalizedStatus === 'for lease conditional' ||
+    normalizedStatus === 'for lease conditional escape' ||
+    normalizedStatus === 'price reduced' ||
+    normalizedStatus === 'price change' ||
+    normalizedStatus === 'extension'
+  ) {
+    timestamp = originalEntryTimestamp || null;
+  }
+  // Sold and Leased: use PurchaseContractDate
+  else if (normalizedStatus === 'sold' || normalizedStatus === 'leased') {
+    timestamp = statusDates?.purchaseContractDate || null;
+  }
+  // Removed: use COALESCE logic (first available from statusDates)
+  else if (
+    normalizedStatus === 'terminated' ||
+    normalizedStatus === 'cancelled' ||
+    normalizedStatus === 'suspended' ||
+    normalizedStatus === 'unavailable' ||
+    normalizedStatus === 'expired' ||
+    normalizedStatus === 'withdrawn'
+  ) {
+    timestamp =
+      statusDates?.suspendedDate ||
+      statusDates?.terminatedDate ||
+      statusDates?.expirationDate ||
+      statusDates?.withdrawnDate ||
+      statusDates?.unavailableDate ||
+      null;
+  }
+  // Fallback: use OriginalEntryTimestamp
+  else {
+    timestamp = originalEntryTimestamp || null;
+  }
+
+  const statusPrefix = getStatusPrefix(mlsStatus || status);
+  const statusTimestampLabel = timestamp ? `${statusPrefix} ${timestamp}` : null;
 
   const resolvedPriceChangeLabel =
     priceChangeLabel ??
@@ -265,7 +318,7 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
           <span className="truncate uppercase tracking-wide">
             {mlsNumber ?? 'MLS Pending'}
           </span>
-          <span className="text-right">{listingAgeLabel ?? '—'}</span>
+          <span className="text-right">{statusTimestampLabel ?? '—'}</span>
         </div>
       </div>
     </button>

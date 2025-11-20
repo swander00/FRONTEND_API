@@ -301,7 +301,10 @@ export interface PropertySuggestionResponse {
   cityRegion?: string;
   status: string;
   mlsStatus: string;
-  listingAge: string;
+  listingAge: string; // ⚠️ DEPRECATED: Use originalEntryTimestamp with status prefix instead
+  originalEntryTimestamp?: string; // Formatted timestamp: "10th Jun, 2025"
+  originalEntryTimestampRaw?: string; // Raw timestamp for filtering/comparison
+  statusDates?: StatusDates; // Status-specific dates (Sold, Leased, Removed)
   listPrice: number;
   originalListPrice?: number;
   isPriceReduced: boolean;

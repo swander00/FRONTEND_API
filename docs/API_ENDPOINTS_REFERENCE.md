@@ -89,12 +89,35 @@ Get paginated list of properties with filters, sorting, and pagination.
 | `maxBathrooms` | number | Maximum bathrooms (0-20) | `3` |
 | `minSquareFeet` | number | Minimum square feet | `1000` |
 | `maxSquareFeet` | number | Maximum square feet | `3000` |
-| `status` | string | Property status | `buy`, `lease`, `sold` |
+| `status` | string | Property status group | `for-sale`, `for-lease`, `sold`, `leased`, `removed` |
+| `dateFrom` | string | Filter by date (ISO format YYYY-MM-DD). Filters by status-specific timestamp column. See [Status Filtering](#status-filtering) below. | `2025-01-01` |
 | `hasOpenHouse` | boolean | Has open house | `true` |
 | `hasVirtualTour` | boolean | Has virtual tour | `true` |
 | `minGarageSpaces` | number | Minimum garage spaces | `1` |
 | `minTotalParking` | number | Minimum total parking | `2` |
 | `searchTerm` | string | Full-text search (max 80 chars) | `toronto` |
+
+**Status Filtering:**
+
+The `status` parameter filters properties by status group. When combined with `dateFrom`, filtering uses status-specific timestamp columns:
+
+| Status Group | Timestamp Column Used for `dateFrom` | Description |
+|-------------|--------------------------------------|-------------|
+| `for-sale` | `OriginalEntryTimestampRaw` | Properties listed for sale |
+| `for-lease` | `OriginalEntryTimestampRaw` | Properties listed for lease |
+| `sold` | `PurchaseContractDate` | Properties that have been sold |
+| `leased` | `PurchaseContractDate` | Properties that have been leased |
+| `removed` | COALESCE(removal dates) | Properties removed from market (Terminated, Cancelled, Suspended, Expired, Withdrawn, Unavailable) |
+
+**Date Filtering (`dateFrom`):**
+
+The `dateFrom` parameter filters properties where the status-specific timestamp column is greater than or equal to the provided date:
+
+- **For Sale/For Lease**: Filters by `OriginalEntryTimestampRaw >= dateFrom`
+- **Sold/Leased**: Filters by `PurchaseContractDate >= dateFrom`
+- **Removed**: Filters using OR logic: `(SuspendedDate >= dateFrom OR TerminatedDate >= dateFrom OR ExpirationDate >= dateFrom OR WithdrawnDate >= dateFrom OR UnavailableDate >= dateFrom)`
+
+**Note:** The `dateFrom` parameter only applies when a `status` filter is also provided. Date format must be ISO 8601: `YYYY-MM-DD`.
 
 **Response:**
 ```json
@@ -106,7 +129,7 @@ Get paginated list of properties with filters, sorting, and pagination.
       "fullAddress": "123 Main St, Toronto, ON",
       "city": "Toronto",
       "stateOrProvince": "ON",
-      "status": "buy",
+      "status": "for-sale",
       "mlsStatus": "Active",
       "listPrice": 750000,
       "originalListPrice": 800000,
@@ -245,7 +268,8 @@ Get properties for map display with bounds filtering.
 | Parameter | Type | Description | Example |
 |-----------|------|-------------|---------|
 | `bounds` | JSON string | Map bounds `{northEast: {lat, lng}, southWest: {lat, lng}}` | `{"northEast":{"lat":43.7,"lng":-79.3},"southWest":{"lat":43.6,"lng":-79.5}}` |
-| `status` | string | Property status filter | `buy` |
+| `status` | string | Property status group | `for-sale`, `for-lease`, `sold`, `leased`, `removed` |
+| `dateFrom` | string | Filter by date (ISO format YYYY-MM-DD) | `2025-01-01` |
 | `minPrice` | number | Minimum price | `500000` |
 | `maxPrice` | number | Maximum price | `1000000` |
 
@@ -255,7 +279,7 @@ Get properties for map display with bounds filtering.
   "properties": [
     {
       "listingKey": "X12391175",
-      "status": "buy",
+      "status": "for-sale",
       "propertySubType": "Detached",
       "fullAddress": "123 Main St, Toronto, ON",
       "city": "Toronto",
@@ -307,8 +331,10 @@ Get property suggestions for autocomplete/search.
       "fullAddress": "123 Main St, Toronto, ON",
       "city": "Toronto",
       "stateOrProvince": "ON",
-      "status": "buy",
-      "mlsStatus": "Active",
+      "status": "for-sale",
+      "mlsStatus": "For Sale",
+      "originalEntryTimestamp": "10th Jun, 2025",
+      "originalEntryTimestampRaw": "2025-06-10T00:00:00.000Z",
       "listPrice": 750000,
       "isPriceReduced": true,
       "bedroomsAboveGrade": 3,
@@ -448,6 +474,11 @@ curl http://localhost:8080/health
 ### Get Properties
 ```bash
 curl "http://localhost:8080/api/properties?city=Toronto&minPrice=500000&page=1&pageSize=12"
+```
+
+### Get Properties with Status and Date Filter
+```bash
+curl "http://localhost:8080/api/properties?status=for-sale&dateFrom=2025-01-01&page=1&pageSize=12"
 ```
 
 ### Get Property Details

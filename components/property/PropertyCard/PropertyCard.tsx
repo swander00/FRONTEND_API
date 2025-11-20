@@ -19,59 +19,31 @@ export function PropertyCard({
   priority = false,
 }: PropertyCardProps) {
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    console.log('[PropertyCard] Card clicked - target:', e.target);
-    console.log('[PropertyCard] Card clicked - currentTarget:', e.currentTarget);
-    console.log('[PropertyCard] onClick prop exists:', !!onClick);
-    
-    // Check if click came from a button or interactive element (excluding the card itself)
+    // Check if click came from a button or interactive element
     const target = e.target as HTMLElement;
-    const cardElement = e.currentTarget;
     
-    // Check if the target itself is a button or link
-    const targetIsButton = target.tagName === 'BUTTON' || target.tagName === 'A';
-    const targetIsRoleButton = target.getAttribute('role') === 'button' && target !== cardElement;
-    
-    // Check if target is inside a button/link (but not the card itself)
-    let closestButton = target.closest('button');
-    let closestLink = target.closest('a');
-    
-    // Remove card element from consideration (check if closest element is the card itself)
-    if (closestButton && closestButton === (cardElement as any)) closestButton = null;
-    if (closestLink && closestLink === (cardElement as any)) closestLink = null;
-    
-    const isButton = targetIsButton || targetIsRoleButton || !!closestButton || !!closestLink;
-    
-    console.log('[PropertyCard] Button detection:', {
-      targetTag: target.tagName,
-      targetIsButton,
-      targetIsRoleButton,
-      closestButton: !!closestButton,
-      closestLink: !!closestLink,
-      isButton,
-    });
-    
-    if (isButton) {
-      console.log('[PropertyCard] Click came from button, ignoring');
+    // Check if target is a button or link element
+    if (target.tagName === 'BUTTON' || target.tagName === 'A') {
       return;
     }
     
-    console.log('[PropertyCard] Card clicked - triggering onClick');
-    if (onClick) {
-      onClick();
-      console.log('[PropertyCard] onClick called successfully');
-    } else {
-      console.warn('[PropertyCard] onClick prop is undefined!');
+    // Check if target is inside a button or link (but allow clicks on the card itself)
+    const closestButton = target.closest('button');
+    const closestLink = target.closest('a');
+    
+    // Only ignore if we found a button/link that's not the card itself
+    if (closestButton || closestLink) {
+      return;
     }
+    
+    // Trigger onClick handler
+    onClick?.();
   };
 
   return (
     <div
-      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={(e) => {
-        console.log('[PropertyCard] Direct onClick fired on div');
-        handleCardClick(e);
-      }}
-      role="button"
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer relative"
+      onClick={handleCardClick}
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

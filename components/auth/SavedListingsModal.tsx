@@ -158,7 +158,11 @@ function convertPropertyDetailsToProperty(response: PropertyDetailsResponse): Pr
       lng: response.longitude,
     } : undefined,
     daysOnMarket: response.daysOnMarket,
-    listingAge: response.modificationTimestamp,
+    // ⚠️ DEPRECATED: listingAge is no longer used for For Sale, For Lease, Sold, Leased, or Removed statuses.
+    // Use originalEntryTimestamp with status prefix instead via getStatusTimestampDisplay()
+    listingAge: response.modificationTimestamp, // Kept for backward compatibility only
+    originalEntryTimestamp: response.originalEntryTimestamp,
+    originalEntryTimestampRaw: response.originalEntryTimestampRaw,
     isNewListing: response.isNewListing,
     isPriceReduced: response.priceReductionAmount ? true : false,
     mediaCount: response.mediaCount,

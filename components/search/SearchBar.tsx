@@ -150,6 +150,10 @@ const toListingSuggestion = (property: Property): PreparedSuggestion => {
     price: property.price,
     priceFormatted: formatCurrency(property.price),
     mlsNumber: property.mlsNumber,
+    mlsStatus: property.mlsStatus,
+    status: property.status,
+    originalEntryTimestamp: property.originalEntryTimestamp || undefined,
+    statusDates: property.statusDates,
     beds: property.bedrooms.above || undefined,
     additionalBeds: property.bedrooms.below || undefined,
     baths: property.bathrooms || undefined,
@@ -203,6 +207,17 @@ const apiSuggestionToSearchSuggestion = (suggestion: {
   price?: number;
   priceFormatted?: string;
   mlsNumber?: string;
+  mlsStatus?: string;
+  status?: string;
+  originalEntryTimestamp?: string;
+  statusDates?: {
+    purchaseContractDate?: string;
+    suspendedDate?: string;
+    terminatedDate?: string;
+    expirationDate?: string;
+    withdrawnDate?: string;
+    unavailableDate?: string;
+  };
   beds?: number;
   additionalBeds?: number;
   baths?: number;
@@ -219,6 +234,10 @@ const apiSuggestionToSearchSuggestion = (suggestion: {
       price: suggestion.price,
       priceFormatted: suggestion.priceFormatted || (suggestion.price ? formatCurrency(suggestion.price) : undefined),
       mlsNumber: suggestion.mlsNumber,
+      mlsStatus: suggestion.mlsStatus,
+      status: suggestion.status,
+      originalEntryTimestamp: suggestion.originalEntryTimestamp,
+      statusDates: suggestion.statusDates,
       beds: suggestion.beds,
       additionalBeds: suggestion.additionalBeds,
       baths: suggestion.baths,

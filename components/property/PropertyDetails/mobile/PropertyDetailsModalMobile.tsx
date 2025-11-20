@@ -271,12 +271,28 @@ export default function PropertyDetailsModalMobile({
 
   const handleExpand = () => {
     // Get MLS number from property (prefer MLSNumber from normalized property, fallback to mlsNumber from raw property)
-    const mlsNumber = property?.MLSNumber || resolvedProperty?.mlsNumber || resolvedProperty?.listingKey;
-    if (mlsNumber) {
+    const mlsNumber = property?.MLSNumber || resolvedProperty?.mlsNumber || resolvedProperty?.listingKey || resolvedProperty?.id;
+    
+    if (!mlsNumber) {
+      console.error('[PropertyDetailsModalMobile] Cannot expand: No MLS number or identifier found', {
+        property: property,
+        resolvedProperty: resolvedProperty
+      });
+      toast.error('Unable to open property page: Missing property identifier');
+      return;
+    }
+
+    try {
       // Navigate to the property details page with MLS number in URL
-      router.push(`/property/${encodeURIComponent(mlsNumber)}`);
-      // Close the modal
-      onClose?.();
+      const url = `/property/${encodeURIComponent(String(mlsNumber))}`;
+      console.log('[PropertyDetailsModalMobile] Expanding to:', url);
+      
+      // Navigate first - the route change will naturally close the modal
+      // Using window.location.href for reliable full page navigation
+      window.location.href = url;
+    } catch (error) {
+      console.error('[PropertyDetailsModalMobile] Error navigating to property page:', error);
+      toast.error('Failed to open property page');
     }
   };
 
@@ -285,6 +301,7 @@ export default function PropertyDetailsModalMobile({
       {/* Action Buttons - Fixed Top Right */}
       <div className="fixed top-2 right-2 z-50 flex items-center gap-2">
         <button
+          type="button"
           onClick={handleExpand}
           className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg"
           aria-label="Open in full page"

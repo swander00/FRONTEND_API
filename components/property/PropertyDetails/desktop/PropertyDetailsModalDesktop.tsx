@@ -216,12 +216,29 @@ export default function PropertyDetailsModalDesktop({ isOpen, property: rawPrope
 
   const handleExpand = () => {
     // Get MLS number from property (prefer MLSNumber from normalized property, fallback to mlsNumber from raw property)
-    const mlsNumber = property?.MLSNumber || resolvedProperty?.mlsNumber || resolvedProperty?.listingKey;
-    if (mlsNumber) {
+    const mlsNumber = property?.MLSNumber || resolvedProperty?.mlsNumber || resolvedProperty?.listingKey || resolvedProperty?.id || propertyId;
+    
+    if (!mlsNumber) {
+      console.error('[PropertyDetailsModalDesktop] Cannot expand: No MLS number or identifier found', {
+        property: property,
+        resolvedProperty: resolvedProperty,
+        propertyId: propertyId
+      });
+      toast.error('Unable to open property page: Missing property identifier');
+      return;
+    }
+
+    try {
       // Navigate to the property details page with MLS number in URL
-      router.push(`/property/${encodeURIComponent(mlsNumber)}`);
-      // Close the modal
-      onClose?.();
+      const url = `/property/${encodeURIComponent(String(mlsNumber))}`;
+      console.log('[PropertyDetailsModalDesktop] Expanding to:', url);
+      
+      // Navigate first - the route change will naturally close the modal
+      // Using window.location.href for reliable full page navigation
+      window.location.href = url;
+    } catch (error) {
+      console.error('[PropertyDetailsModalDesktop] Error navigating to property page:', error);
+      toast.error('Failed to open property page');
     }
   };
 
@@ -234,7 +251,13 @@ export default function PropertyDetailsModalDesktop({ isOpen, property: rawPrope
         <div className="flex items-center justify-between p-2 sm:p-4 border-b border-gray-200/60 bg-white/95 backdrop-blur-sm sticky top-0 z-10">
           <h2 className="text-sm sm:text-lg font-semibold text-gray-900">Property Details</h2>
           <div className="flex items-center gap-1 sm:gap-2">
-            <button onClick={handleExpand} className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200" title="Open in full page">
+            <button 
+              type="button"
+              onClick={handleExpand}
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200" 
+              title="Open in full page"
+              aria-label="Open in full page"
+            >
               <Maximize2 className="w-4 h-4 text-gray-600" />
             </button>
             <button onClick={onClose} className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200">

@@ -15,6 +15,7 @@ import { TIME_RANGE_OPTIONS } from '@/lib/filters/options';
 import { cn } from '@/lib/utils';
 import { useFiltersDispatch, useFiltersState } from '../../FiltersContext';
 import { getScrollableParents } from '../../utils/getScrollableParents';
+import type { StatusOption } from '../../FiltersContext';
 
 export type DateDropdownProps = {
   isOpen: boolean;
@@ -26,8 +27,43 @@ const MIN_DROPDOWN_WIDTH = 280;
 const VERTICAL_OFFSET = 8;
 const VIEWPORT_PADDING = 16;
 
+/**
+ * Get the date filter label text based on status
+ * Returns appropriate text like "Date Listed", "Date Sold", etc.
+ */
+function getDateFilterLabel(status: StatusOption): { title: string; description: string } {
+  switch (status) {
+    case 'For Sale':
+    case 'For Lease':
+      return {
+        title: 'Filter by Date Listed',
+        description: `Show ${status.toLowerCase()} listings from a specific time period`,
+      };
+    case 'Sold':
+      return {
+        title: 'Filter by Date Sold',
+        description: 'Show sold listings from a specific time period',
+      };
+    case 'Leased':
+      return {
+        title: 'Filter by Date Leased',
+        description: 'Show leased listings from a specific time period',
+      };
+    case 'Removed':
+      return {
+        title: 'Filter by Date Removed',
+        description: 'Show removed listings from a specific time period',
+      };
+    default:
+      return {
+        title: 'Filter by Date Listed',
+        description: 'Show listings from a specific time period',
+      };
+  }
+}
+
 export function DateDropdown({ isOpen, onClose, anchorRef }: DateDropdownProps) {
-  const { timeRange, timeRangeCustomDate } = useFiltersState();
+  const { timeRange, timeRangeCustomDate, status } = useFiltersState();
   const dispatch = useFiltersDispatch();
   const [isMounted, setIsMounted] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0, width: MIN_DROPDOWN_WIDTH });
@@ -290,6 +326,8 @@ export function DateDropdown({ isOpen, onClose, anchorRef }: DateDropdownProps) 
     onClose();
   }, [customDate, dispatch, onClose]);
 
+  const dateFilterLabels = useMemo(() => getDateFilterLabel(status), [status]);
+
   const dropdownContent = useMemo(() => {
     if (!isOpen || !isMounted) {
       return null;
@@ -308,10 +346,10 @@ export function DateDropdown({ isOpen, onClose, anchorRef }: DateDropdownProps) 
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/60 px-4 py-3">
           <div>
             <p id={titleId} className="text-sm font-semibold text-slate-900">
-              Filter by Date Listed
+              {dateFilterLabels.title}
             </p>
             <p id={descriptionId} className="text-xs text-slate-500">
-              Show for sale listings from a specific time period
+              {dateFilterLabels.description}
             </p>
           </div>
           <button
@@ -412,6 +450,7 @@ export function DateDropdown({ isOpen, onClose, anchorRef }: DateDropdownProps) 
   }, [
     customActive,
     customDate,
+    dateFilterLabels,
     handleCustomApply,
     handleQuickSelectKeyDown,
     handleSelect,

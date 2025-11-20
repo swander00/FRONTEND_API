@@ -11,7 +11,7 @@ export function PropertyCardDetails({ property }: Props) {
   const listedDisplay = getStatusTimestampDisplay(property);
 
   return (
-    <div className="p-4 md:p-5 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100 min-w-0">
+    <div className="p-4 md:p-5 min-w-0">
       {/* Top: Price + Neighborhood */}
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-xl md:text-2xl font-extrabold text-gray-900 leading-tight truncate min-w-0 flex-1">
@@ -46,7 +46,7 @@ export function PropertyCardDetails({ property }: Props) {
         <Divider />
         <Metric label="Baths" value={property.bathrooms} />
         <Divider />
-        <Metric label="Square Ft" value={formatSquareFootageRange(property.squareFootage)} />
+        <Metric label="Sq Ft" value={formatSquareFootageRange(property.squareFootage)} />
         <Divider />
         <Metric label="Parking" value={formatParkingSpaces(property.parking)} />
       </div>
@@ -61,17 +61,17 @@ export function PropertyCardDetails({ property }: Props) {
 }
 
 function Divider() {
-  return <div className="mx-3 h-10 w-px bg-gray-200" />;
+  return <div className="mx-2 h-10 w-px bg-gray-200 flex-shrink-0" />;
 }
 
 function Metric({ label, value }: { label: string; value?: string | number | null }) {
-  const displayValue = value === undefined || value === null || value === '' ? '—' : value;
+  const displayValue = value === undefined || value === null || value === '' ? '—' : String(value);
 
   return (
-    <div className="flex flex-1 min-w-0">
-      <div className="flex flex-col gap-0.5 leading-tight">
-        <span className="text-xs uppercase tracking-wide text-gray-500">{label}</span>
-        <span className="text-sm font-semibold text-gray-900 truncate">{displayValue}</span>
+    <div className="flex flex-1 min-w-0 basis-0">
+      <div className="flex flex-col gap-0.5 leading-tight min-w-0 w-full">
+        <span className="text-xs uppercase tracking-wide text-gray-500 whitespace-nowrap">{label}</span>
+        <span className="text-sm font-semibold text-gray-900 truncate" title={displayValue}>{displayValue}</span>
       </div>
     </div>
   );
