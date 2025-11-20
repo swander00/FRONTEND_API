@@ -4,7 +4,7 @@
  * Manages Google One Tap sign-in prompt
  */
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuth } from './useAuth';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 
@@ -40,6 +40,7 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
   const { isAuthenticated, isLoading } = useAuth();
   const initializedRef = useRef(false);
   const scriptLoadedRef = useRef(false);
+  const [scriptReady, setScriptReady] = useState(false);
 
   const handleCredentialResponse = useCallback(async (response: { credential: string }) => {
     const supabase = getSupabaseBrowserClient();
@@ -92,14 +93,30 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
 
   // Load Google Identity Services script
   useEffect(() => {
-    if (!enabled || isAuthenticated || isLoading || scriptLoadedRef.current) {
+    if (!enabled || isAuthenticated || isLoading) {
       return;
     }
 
     // Check if script is already loaded
     if (window.google?.accounts?.id) {
       scriptLoadedRef.current = true;
+      setScriptReady(true);
       return;
+    }
+
+    // Check if script is already in the DOM
+    const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+    if (existingScript) {
+      // Script exists, wait for it to load
+      const checkInterval = setInterval(() => {
+        if (window.google?.accounts?.id) {
+          scriptLoadedRef.current = true;
+          setScriptReady(true);
+          clearInterval(checkInterval);
+        }
+      }, 100);
+
+      return () => clearInterval(checkInterval);
     }
 
     const script = document.createElement('script');
@@ -108,6 +125,10 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
     script.defer = true;
     script.onload = () => {
       scriptLoadedRef.current = true;
+      setScriptReady(true);
+    };
+    script.onerror = () => {
+      console.error('Failed to load Google Identity Services script');
     };
     document.head.appendChild(script);
 
@@ -118,22 +139,21 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
 
   // Initialize One Tap
   useEffect(() => {
-    if (!enabled || isAuthenticated || isLoading || !scriptLoadedRef.current || initializedRef.current) {
+    if (!enabled || isAuthenticated || isLoading || !scriptReady || initializedRef.current) {
       return;
     }
 
     // Wait a bit for script to fully initialize
     const timer = setTimeout(() => {
       if (!window.google?.accounts?.id) {
+        console.warn('Google Identity Services not available after script load');
         return;
       }
 
-      // Get Google Client ID from Supabase or environment
-      // For Supabase, we need to get it from the OAuth provider config
-      // We'll use an environment variable or get it from Supabase
+      // Get Google Client ID from environment
       const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-      if (!clientId) {
+      if (!clientId || clientId === 'your-google-oauth-client-id.apps.googleusercontent.com') {
         console.warn('Google Client ID not configured. Set NEXT_PUBLIC_GOOGLE_CLIENT_ID environment variable.');
         return;
       }
@@ -150,20 +170,32 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
         // Prompt One Tap
         window.google.accounts.id.prompt((notification) => {
           // Handle notification if needed
-          const notDisplayedReason = notification.getNotDisplayedReason();
-          const skippedReason = notification.getSkippedReason();
-          const dismissedReason = notification.getDismissedReason();
-          
-          if (notDisplayedReason || skippedReason || dismissedReason) {
-            const reason = notDisplayedReason || skippedReason || dismissedReason;
-            if (reason && reason !== 'browser_not_supported' && reason !== 'invalid_client') {
-              // Silently fail - One Tap not available is not an error
-              console.debug('Google One Tap not displayed:', reason);
+          if (notification) {
+            try {
+              const notDisplayedReason = notification.getNotDisplayedReason();
+              const skippedReason = notification.getSkippedReason();
+              const dismissedReason = notification.getDismissedReason();
+              
+              if (notDisplayedReason) {
+                if (notDisplayedReason !== 'browser_not_supported' && notDisplayedReason !== 'invalid_client') {
+                  console.debug('Google One Tap not displayed:', notDisplayedReason);
+                }
+              }
+              if (skippedReason) {
+                console.debug('Google One Tap skipped:', skippedReason);
+              }
+              if (dismissedReason) {
+                console.debug('Google One Tap dismissed:', dismissedReason);
+              }
+            } catch (err) {
+              // Ignore notification errors
+              console.debug('One Tap notification error:', err);
             }
           }
         });
 
         initializedRef.current = true;
+        console.log('Google One Tap initialized successfully');
       } catch (err) {
         console.error('Failed to initialize Google One Tap:', err);
       }
@@ -172,7 +204,7 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
     return () => {
       clearTimeout(timer);
     };
-  }, [enabled, isAuthenticated, isLoading, autoSelect, cancelOnTapOutside, handleCredentialResponse]);
+  }, [enabled, isAuthenticated, isLoading, scriptReady, autoSelect, cancelOnTapOutside, handleCredentialResponse]);
 
   // Cleanup on unmount or when authenticated
   useEffect(() => {
