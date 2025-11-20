@@ -28,7 +28,7 @@ function getApiBaseUrl(): string {
 /**
  * @deprecated Use api.properties.list() instead
  */
-export async function apiGet<T>(endpoint: string, params?: Record<string, string | number | boolean>): Promise<T> {
+export async function apiGet<T>(endpoint: string, params?: Record<string, string | number | boolean | string[] | undefined>): Promise<T> {
   // Use HTTP client directly to avoid circular dependencies
   const { createHttpClient } = await import('./api/httpClient');
   const client = createHttpClient(getApiBaseUrl());
