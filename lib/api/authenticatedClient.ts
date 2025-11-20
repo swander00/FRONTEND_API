@@ -122,9 +122,28 @@ let authenticatedClient: HttpClient | null = null;
 
 export function getAuthenticatedClient(): HttpClient {
   if (!authenticatedClient) {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+    // In development, use Next.js proxy (relative URLs) to avoid CORS issues
+    // In production, use direct backend URL
+    const isDevelopment = process.env.NODE_ENV === 'development' || typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    
+    let baseUrl: string;
+    if (isDevelopment) {
+      // Use relative URL to go through Next.js API proxy
+      baseUrl = '';
+    } else {
+      // Use direct backend URL in production
+      baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
+    }
+    
     authenticatedClient = createAuthenticatedClient(baseUrl);
   }
   return authenticatedClient;
+}
+
+/**
+ * Reset authenticated client instance (useful on logout)
+ */
+export function resetAuthenticatedClient(): void {
+  authenticatedClient = null;
 }
 

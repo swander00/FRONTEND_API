@@ -10,7 +10,7 @@ export function Navbar({ activeTab = 'search' }: NavbarProps) {
   return (
     <header className="bg-white/95 border-b border-gray-100 shadow-sm backdrop-blur">
       <div className="w-full px-4 sm:px-6 lg:px-10">
-        <div className="grid grid-cols-1 items-center gap-4 py-4 sm:grid-cols-[auto_1fr_auto] sm:gap-6">
+        <div className="grid grid-cols-1 items-center gap-4 py-3 sm:grid-cols-[auto_1fr_auto] sm:gap-6">
           <Link
             href="/"
             className="order-1 flex items-center gap-3 transition-transform duration-200 hover:scale-[1.01]"

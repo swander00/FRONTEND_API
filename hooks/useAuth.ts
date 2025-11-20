@@ -8,6 +8,7 @@ import { useEffect, useState, useCallback } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
 import { getUserProfile, type UserProfile } from '@/lib/api/users';
+import { resetAuthenticatedClient } from '@/lib/api/authenticatedClient';
 
 export type AuthState = 
   | { status: 'loading' }
@@ -33,9 +34,15 @@ export function useAuth() {
         return;
       }
 
-      // Try to get user profile
+      // Try to get user profile with timeout
       try {
-        const profile = await getUserProfile();
+        // Use Promise.race to add timeout
+        const profilePromise = getUserProfile();
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+        );
+        
+        const profile = await Promise.race([profilePromise, timeoutPromise]);
         setState({ 
           status: 'authenticated', 
           user: session.user, 
@@ -43,8 +50,9 @@ export function useAuth() {
           profile 
         });
       } catch (error) {
-        // Profile doesn't exist or error fetching - check onboarding status
-        // For now, assume onboarding required if profile fetch fails
+        // Profile doesn't exist or error fetching - this is OK for new users
+        // Set to onboarding_required but don't block the app
+        console.log('Profile not found or error fetching (this is OK for new users):', error);
         setState({ 
           status: 'onboarding_required', 
           user: session.user, 
@@ -58,45 +66,71 @@ export function useAuth() {
   }, [supabase]);
 
   useEffect(() => {
-    checkAuth();
+    let mounted = true;
+    
+    // Run checkAuth asynchronously
+    checkAuth().catch((error) => {
+      console.error('Error in checkAuth:', error);
+    });
 
     if (!supabase) return;
 
     // Listen to auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+        
         if (event === 'SIGNED_IN' && session) {
-          // Refresh profile after sign in
+          // Refresh profile after sign in with timeout
           try {
-            const profile = await getUserProfile();
-            setState({ 
-              status: 'authenticated', 
-              user: session.user, 
-              session,
-              profile 
-            });
-          } catch {
-            setState({ 
-              status: 'onboarding_required', 
-              user: session.user, 
-              session 
-            });
+            const profilePromise = getUserProfile();
+            const timeoutPromise = new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+            );
+            
+            const profile = await Promise.race([profilePromise, timeoutPromise]);
+            if (mounted) {
+              setState({ 
+                status: 'authenticated', 
+                user: session.user, 
+                session,
+                profile 
+              });
+            }
+          } catch (error) {
+            // Profile doesn't exist yet - this is OK, user needs onboarding
+            console.log('Profile not found after sign in (user needs onboarding):', error);
+            if (mounted) {
+              setState({ 
+                status: 'onboarding_required', 
+                user: session.user, 
+                session 
+              });
+            }
           }
         } else if (event === 'SIGNED_OUT') {
-          setState({ status: 'unauthenticated' });
+          if (mounted) {
+            setState({ status: 'unauthenticated' });
+          }
         } else if (event === 'TOKEN_REFRESHED' && session) {
-          // Update session on token refresh
-          if (state.status === 'authenticated' || state.status === 'onboarding_required') {
-            setState({ ...state, session });
+          // Update session on token refresh using functional setState to access current state
+          if (mounted) {
+            setState((currentState) => {
+              if (currentState.status === 'authenticated' || currentState.status === 'onboarding_required') {
+                return { ...currentState, session };
+              }
+              return currentState;
+            });
           }
         }
       }
     );
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase, checkAuth, state.status]);
+  }, [supabase, checkAuth]);
 
   const signInWithGoogle = useCallback(async () => {
     if (!supabase) {
@@ -121,37 +155,50 @@ export function useAuth() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     
+    // Reset authenticated client to clear any cached tokens
+    resetAuthenticatedClient();
+    
     setState({ status: 'unauthenticated' });
   }, [supabase]);
 
   const refreshProfile = useCallback(async () => {
-    if (state.status !== 'authenticated' && state.status !== 'onboarding_required') {
-      return;
-    }
+    setState((currentState) => {
+      if (currentState.status !== 'authenticated' && currentState.status !== 'onboarding_required') {
+        return currentState;
+      }
+      return currentState;
+    });
 
+    // Fetch profile asynchronously
     try {
       const profile = await getUserProfile();
-      if (state.status === 'authenticated') {
-        setState({ ...state, profile });
-      } else {
-        setState({ 
-          status: 'authenticated', 
-          user: state.user, 
-          session: state.session,
-          profile 
-        });
-      }
+      setState((prevState) => {
+        if (prevState.status === 'authenticated') {
+          return { ...prevState, profile };
+        } else if (prevState.status === 'onboarding_required') {
+          return {
+            status: 'authenticated' as const,
+            user: prevState.user,
+            session: prevState.session,
+            profile
+          };
+        }
+        return prevState;
+      });
     } catch (error) {
       // Profile still doesn't exist
-      if (state.status === 'authenticated') {
-        setState({ 
-          status: 'onboarding_required', 
-          user: state.user, 
-          session: state.session 
-        });
-      }
+      setState((prevState) => {
+        if (prevState.status === 'authenticated') {
+          return {
+            status: 'onboarding_required' as const,
+            user: prevState.user,
+            session: prevState.session
+          };
+        }
+        return prevState;
+      });
     }
-  }, [state]);
+  }, []);
 
   return {
     state,

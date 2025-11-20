@@ -1,63 +1,156 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabaseClient';
+import { getOnboardingStatus } from '@/lib/api/users';
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(true);
+  const isProcessingRef = useRef(true);
+  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleCallback = async () => {
       const supabase = getSupabaseBrowserClient();
       if (!supabase) {
         setError('Supabase client not initialized');
+        setIsProcessing(false);
+        isProcessingRef.current = false;
         return;
       }
 
+      // Set a timeout to prevent infinite loading
+      timeoutRef.current = setTimeout(() => {
+        if (isProcessingRef.current) {
+          setError('Authentication timeout. Please try signing in again.');
+          setIsProcessing(false);
+          isProcessingRef.current = false;
+        }
+      }, 10000); // 10 second timeout
+
       try {
+        // Helper function to check onboarding and redirect
+        const checkOnboardingAndRedirect = async (session: any) => {
+          try {
+            const status = await getOnboardingStatus();
+            if (!status.profileComplete || !status.preferencesComplete) {
+              router.push('/onboarding');
+            } else {
+              router.push('/');
+            }
+          } catch (err) {
+            // If onboarding check fails (404, timeout, etc.), redirect to onboarding
+            // This handles new users who don't have a profile yet
+            console.log('Onboarding check failed, redirecting to onboarding:', err);
+            router.push('/onboarding');
+          }
+        };
+
+        // Wait for OAuth callback to process (Supabase handles URL hash fragments)
+        // Use onAuthStateChange to wait for session to be established
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, session) => {
+            if (event === 'SIGNED_IN' && session) {
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+              }
+              setIsProcessing(false);
+              isProcessingRef.current = false;
+              
+              // Small delay to ensure session is fully established
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+              try {
+                await checkOnboardingAndRedirect(session);
+              } catch (err) {
+                console.error('Error checking onboarding status:', err);
+                // On error, redirect to onboarding as safe default
+                router.push('/onboarding');
+              }
+            } else if (event === 'SIGNED_OUT') {
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+              }
+              setIsProcessing(false);
+              isProcessingRef.current = false;
+              setError('Sign in was cancelled');
+            }
+          }
+        );
+
+        subscriptionRef.current = subscription;
+
+        // Also check for existing session immediately
         const { data: { session }, error: authError } = await supabase.auth.getSession();
 
         if (authError) {
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
           setError(authError.message);
+          setIsProcessing(false);
+          isProcessingRef.current = false;
+          if (subscriptionRef.current) {
+            subscriptionRef.current.unsubscribe();
+            subscriptionRef.current = null;
+          }
           return;
         }
 
         if (session) {
-          // Check if user needs onboarding
-          try {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8080';
-            const response = await fetch(`${baseUrl}/api/users/onboarding-status`, {
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`,
-              },
-            });
-
-            if (response.ok) {
-              const status = await response.json();
-              if (!status.profileComplete || !status.preferencesComplete) {
-                router.push('/onboarding');
-                return;
-              }
-            }
-          } catch {
-            // If onboarding check fails, assume onboarding needed
-            router.push('/onboarding');
-            return;
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
           }
-
-          // Redirect to home
-          router.push('/');
-        } else {
-          setError('No session found');
+          setIsProcessing(false);
+          isProcessingRef.current = false;
+          if (subscriptionRef.current) {
+            subscriptionRef.current.unsubscribe();
+            subscriptionRef.current = null;
+          }
+          
+          // Small delay to ensure session is fully established
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          try {
+            await checkOnboardingAndRedirect(session);
+          } catch (err) {
+            console.error('Error checking onboarding status:', err);
+            // On error, redirect to onboarding as safe default
+            router.push('/onboarding');
+          }
         }
       } catch (err) {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
         setError(err instanceof Error ? err.message : 'Authentication failed');
+        setIsProcessing(false);
+        isProcessingRef.current = false;
       }
     };
 
     handleCallback();
+
+    // Cleanup function - properly returned from useEffect
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
   }, [router]);
 
   if (error) {

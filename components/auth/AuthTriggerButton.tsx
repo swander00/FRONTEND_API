@@ -130,9 +130,8 @@ export function AuthTriggerButton({
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
             className={cn(
-              'flex items-center gap-2 rounded-full border border-transparent bg-white px-3 py-1.5 shadow-sm transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
-              className,
-              isMenuOpen && 'shadow-lg'
+              'flex items-center gap-2 rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+              className
             )}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
@@ -142,10 +141,10 @@ export function AuthTriggerButton({
               <img
                 src={avatarUrl}
                 alt={displayName ?? 'User avatar'}
-                className="h-8 w-8 rounded-full object-cover"
+                className="h-10 w-10 rounded-full object-cover"
               />
             ) : (
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700">
                 {initials}
               </span>
             )}
