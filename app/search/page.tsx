@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ResultsSummary } from '@/components/results/ResultsSummary';
@@ -220,7 +220,7 @@ function convertPropertyDetailsToProperty(response: PropertyDetailsResponse): Pr
   };
 }
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -520,6 +520,18 @@ export default function SearchPage() {
         )}
       </PageContainer>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-slate-600">Loading...</div>
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   );
 }
 
