@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { Session, User } from '@supabase/supabase-js';
@@ -45,6 +46,13 @@ export function AuthTriggerButton({
   const [isSavedSearchesModalOpen, setIsSavedSearchesModalOpen] = useState(false);
   const [isSavedSearchesModalClosing, setIsSavedSearchesModalClosing] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!supabase) {
@@ -75,15 +83,56 @@ export function AuthTriggerButton({
     };
   }, [supabase]);
 
+  const updateMenuPosition = useCallback(() => {
+    if (!buttonRef.current || typeof window === 'undefined') {
+      return;
+    }
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const scrollY = window.scrollY || window.pageYOffset;
+    const scrollX = window.scrollX || window.pageXOffset;
+    const viewportWidth = document.documentElement.clientWidth;
+    
+    // Position dropdown below the button, aligned to the right
+    const top = rect.bottom + scrollY + 8; // 8px gap (mt-2 equivalent)
+    const right = viewportWidth - rect.right - scrollX;
+    
+    setMenuPosition({ top, right });
+  }, []);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    updateMenuPosition();
+
+    const handleResize = () => updateMenuPosition();
+    const handleScroll = () => updateMenuPosition();
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isMenuOpen, updateMenuPosition]);
+
   useEffect(() => {
     if (!isMenuOpen) {
       return undefined;
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
+      const target = event.target as Node;
+      if (
+        buttonRef.current?.contains(target) ||
+        (menuRef.current && menuRef.current.contains(target))
+      ) {
+        return;
       }
+      setIsMenuOpen(false);
     };
 
     // Use a small delay to ensure click events on buttons fire first
@@ -216,10 +265,11 @@ export function AuthTriggerButton({
   }, [user, profile]);
 
   return (
-    <div className="relative">
+    <div className="relative z-50">
       {user ? (
-        <div ref={menuRef} className="relative">
+        <div className="relative z-50">
           <button
+            ref={buttonRef}
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
             className={cn(
@@ -257,8 +307,15 @@ export function AuthTriggerButton({
             )}
           </button>
 
-          {isMenuOpen && (
-            <div className="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-lg">
+          {isMenuOpen && isMounted && typeof window !== 'undefined' && createPortal(
+            <div
+              ref={menuRef}
+              className="fixed z-[100] w-56 overflow-hidden rounded-2xl border border-gray-100 bg-white p-2 shadow-lg"
+              style={{
+                top: `${menuPosition.top}px`,
+                right: `${menuPosition.right}px`,
+              }}
+            >
               <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
                 Signed in as
               </div>
@@ -395,7 +452,8 @@ export function AuthTriggerButton({
                 </svg>
                 Sign Out
               </button>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       ) : (
