@@ -151,7 +151,11 @@ export interface Property {
     suspendedDate?: string;
     terminatedDate?: string;
     expirationDate?: string;
+    unavailableDate?: string;
+    withdrawnDate?: string;
   };
+  originalEntryTimestamp?: string; // Formatted timestamp: "10th Jun, 2025"
+  originalEntryTimestampRaw?: string; // Raw timestamp for filtering/comparison
   modificationTimestamp?: string;
   tax?: {
     amount: number;

@@ -1,17 +1,14 @@
 import { Property } from '@/types/property';
 import { LocationTag } from '@/components/ui/badges/LocationTag';
 import { formatBedroomCount, formatCurrency, formatParkingSpaces, formatSquareFootageRange } from '@/lib/formatters';
-import { useTimeAgo } from '@/hooks/useTimeAgo';
+import { getStatusTimestampDisplay } from '@/lib/utils/statusPrefix';
 
 type Props = { property: Property };
 
 export function PropertyCardDetails({ property }: Props) {
-  // Calculate time ago from listedAt if available
-  const timeAgoDisplay = useTimeAgo(property.listedAt ?? '');
-  
-  // Use listingAge from API if available, otherwise fall back to calculated timeAgo
-  // Only show "Just listed" if both are missing or invalid
-  const listedDisplay = property.listingAge || (timeAgoDisplay && timeAgoDisplay.trim() !== '' ? timeAgoDisplay : null);
+  // Use new status prefix + timestamp display logic
+  // This replaces the old ListingAge calculation with status-specific prefix + timestamp
+  const listedDisplay = getStatusTimestampDisplay(property);
 
   return (
     <div className="p-4 md:p-5 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100 min-w-0">

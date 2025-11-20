@@ -4,6 +4,7 @@ import { PropertyLikeButton, PropertySaveButton, CircularActionButton } from "@/
 import { OpenHouseBadge } from "@/components/shared/badges";
 import type { PropertyDetailsData } from "../normalizeProperty";
 import type { InterestLevel } from "../helpers";
+import { getStatusTimestampDisplay } from "@/lib/utils/statusPrefix";
 
 interface PropertyDetailsHeaderProps {
   property: PropertyDetailsData;
@@ -47,6 +48,12 @@ export function PropertyDetailsHeader({
                 <span className="px-1.5 py-0.5 sm:px-2 sm:py-0.5 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded text-[10px] sm:text-xs border border-white/30 shadow-sm">
                   {property.PropertyType}
                 </span>
+                {/* Status timestamp display - matches Property Card format */}
+                {getStatusTimestampDisplay(rawProperty) && (
+                  <span className="px-1.5 py-0.5 sm:px-2 sm:py-0.5 bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm rounded text-[10px] sm:text-xs border border-white/30 shadow-sm text-white/90">
+                    {getStatusTimestampDisplay(rawProperty)}
+                  </span>
+                )}
               </div>
             </div>
             <div className="text-left sm:text-right flex-shrink-0 w-full sm:w-auto">

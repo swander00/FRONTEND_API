@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import React, { type ReactNode } from "react";
 
-import { BaseModal } from "@/components/search/FiltersContainer/Shared/Modals/BaseModal";
+import { PropertyDetailsBaseModal } from "@/components/property/PropertyDetails/PropertyDetailsBaseModal";
 import { cn } from "@/lib/utils";
 
 type PropertyDetailsModalProps = {
@@ -24,9 +24,11 @@ export function PropertyDetailsModal({
   className,
   children,
 }: PropertyDetailsModalProps) {
+  const isOpenValue = Boolean(open);
+  
   return (
-    <BaseModal
-      isOpen={open}
+    <PropertyDetailsBaseModal
+      isOpen={isOpenValue}
       onClose={onClose}
       size="full"
       contentClassName="h-full"
@@ -57,7 +59,7 @@ export function PropertyDetailsModal({
         </div>
       )}
       <div className="flex h-full flex-col overflow-hidden">{children}</div>
-    </BaseModal>
+    </PropertyDetailsBaseModal>
   );
 }
 

@@ -5,7 +5,6 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import './globals.css';
 import { AlertBanner } from '@/components/ui/banners/AlertBanner';
 import { NavbarWrapper } from '@/components/layout/Header/NavbarWrapper';
-import { GoogleOneTap } from '@/components/auth/GoogleOneTap';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -28,7 +27,6 @@ export default function RootLayout({
         <AlertBanner />
         <NavbarWrapper />
         <main>{children}</main>
-        <GoogleOneTap />
         <Analytics />
         <SpeedInsights />
       </body>

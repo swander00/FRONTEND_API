@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +14,7 @@ const SIZE_CLASSNAMES: Record<ModalSize, string> = {
   full: 'max-w-[min(100%,100rem)] h-[92vh]',
 };
 
-export type BaseModalProps = {
+export type PropertyDetailsBaseModalProps = {
   isOpen: boolean;
   onClose: () => void;
   children: ReactNode;
@@ -24,15 +24,19 @@ export type BaseModalProps = {
   overlayClassName?: string;
 };
 
-export function BaseModal({
+/**
+ * Dedicated BaseModal for PropertyDetailsModal to avoid conflicts with other modals
+ * Uses higher z-index (z-[130]) to ensure it appears above other modals
+ */
+export function PropertyDetailsBaseModal({
   isOpen,
   onClose,
   children,
-  size = 'md',
+  size = 'full',
   className,
   contentClassName,
-  overlayClassName = 'z-[120]',
-}: BaseModalProps) {
+  overlayClassName = 'z-[130]',
+}: PropertyDetailsBaseModalProps) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -42,20 +46,16 @@ export function BaseModal({
     };
   }, []);
 
-  // Also check if window is available (client-side only)
   const isClient = typeof window !== 'undefined';
 
   if (!isOpen) {
     return null;
   }
 
-  // Only check isMounted if we're on the client
-  // This prevents SSR issues while allowing the modal to render on client
   if (!isClient) {
     return null;
   }
 
-  // If not mounted yet, wait for mount (but this should be very brief)
   if (!isMounted) {
     return null;
   }
@@ -90,5 +90,4 @@ export function BaseModal({
     document.body,
   );
 }
-
 

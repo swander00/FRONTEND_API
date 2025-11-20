@@ -30,7 +30,10 @@ export function PropertyGrid({
           <PropertyCard
             key={property.id || property.listingKey || property.mlsNumber || `property-${index}`}
             property={property}
-            onClick={() => onPropertyClick?.(property)}
+            onClick={() => {
+              console.log('[PropertyGrid] onClick called for property:', property.id || property.listingKey);
+              onPropertyClick?.(property);
+            }}
             onFavorite={() => onFavorite?.(property)}
             onTour={() => onTour?.(property)}
             priority={isAboveFold}

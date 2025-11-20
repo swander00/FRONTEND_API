@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ResultsSummary } from '@/components/results/ResultsSummary';
@@ -168,7 +168,11 @@ function convertPropertyDetailsToProperty(response: PropertyDetailsResponse): Pr
       lng: response.longitude,
     } : undefined,
     daysOnMarket: response.daysOnMarket,
-    listingAge: response.modificationTimestamp,
+    // ⚠️ DEPRECATED: listingAge is no longer used for For Sale, For Lease, Sold, Leased, or Removed statuses.
+    // Use originalEntryTimestamp with status prefix instead via getStatusTimestampDisplay()
+    listingAge: response.modificationTimestamp, // Kept for backward compatibility only
+    originalEntryTimestamp: response.originalEntryTimestamp,
+    originalEntryTimestampRaw: response.originalEntryTimestampRaw,
     isNewListing: response.isNewListing,
     isPriceReduced: response.priceReductionAmount ? true : false,
     mediaCount: response.mediaCount,
@@ -296,13 +300,22 @@ function SearchPageContent() {
     }
   }, [searchParams, router]);
   
+  // Track if we're setting property programmatically (not from URL)
+  const settingPropertyRef = React.useRef(false);
+  
   // Sync URL when property modal opens/closes
   useEffect(() => {
     const currentMlsParam = searchParams.get('mls');
     const statusParam = searchParams.get('status');
     const mlsNumber = selectedProperty?.mlsNumber;
     
+    // Only sync if MLS number actually changed
     if (currentMlsParam !== mlsNumber) {
+      // Mark that we're setting property programmatically
+      if (mlsNumber) {
+        settingPropertyRef.current = true;
+      }
+      
       const params = new URLSearchParams(searchParams.toString());
       
       if (mlsNumber) {
@@ -317,15 +330,25 @@ function SearchPageContent() {
       
       const newUrl = params.toString() ? `?${params.toString()}` : '';
       router.replace(`/search${newUrl}`, { scroll: false });
+      
+      // Reset flag after URL update (increased timeout to allow router.replace to complete)
+      // Only reset if we're not in the middle of a programmatic set
+      if (mlsNumber) {
+        setTimeout(() => {
+          settingPropertyRef.current = false;
+        }, 500);
+      }
     }
   }, [selectedProperty?.mlsNumber, searchParams, router]);
   
   // Fetch property from URL if MLS param exists
   useEffect(() => {
     const mlsParam = searchParams.get('mls');
+    
     if (mlsParam) {
       // Only fetch if we don't have a property selected or if the MLS number is different
-      if (!selectedProperty || selectedProperty.mlsNumber !== mlsParam) {
+      // Also check if we're currently setting it programmatically to avoid race conditions
+      if (!selectedProperty || (selectedProperty.mlsNumber !== mlsParam && !settingPropertyRef.current)) {
         // Fetch property details by MLS number
         api.properties.getDetails(mlsParam)
           .then((response) => {
@@ -338,12 +361,29 @@ function SearchPageContent() {
             setSelectedProperty(null);
           });
       }
-    } else if (selectedProperty) {
-      // If URL doesn't have MLS param but we have a selected property, clear it
-      // This handles the case when user navigates back/forward or manually changes URL
-      setSelectedProperty(null);
+    } else {
+      // Only clear if we're NOT programmatically setting it AND we have a selected property
+      // If selectedProperty has an mlsNumber but URL doesn't have it, we're syncing - don't clear
+      const hasMlsNumber = selectedProperty?.mlsNumber;
+      const shouldClear = selectedProperty && 
+                         !settingPropertyRef.current && 
+                         !hasMlsNumber; // Only clear if property doesn't have MLS number (not syncing)
+      
+      if (shouldClear) {
+        // This handles the case when user navigates back/forward or manually changes URL
+        // Use a delay to ensure settingPropertyRef is checked after URL sync completes
+        const timeoutId = setTimeout(() => {
+          // Double-check that we're still not setting property programmatically
+          // and that URL still doesn't have mls param
+          const currentMlsParam = searchParams.get('mls');
+          if (!currentMlsParam && !settingPropertyRef.current) {
+            setSelectedProperty(null);
+          }
+        }, 400);
+        return () => clearTimeout(timeoutId);
+      }
     }
-  }, [searchParams, selectedProperty]);
+  }, [searchParams]); // Removed selectedProperty from deps to prevent flickering - only react to URL changes
 
   // Fetch properties from Railway API with filters, sort, and search (for grid view)
   // Use responsive pageSize that matches the grid column layout
@@ -434,11 +474,16 @@ function SearchPageContent() {
     setCurrentPage(1); // Reset to page 1 when search is applied
   }, []);
 
-  const handlePropertyClick = (property: Property) => {
-    console.log('[SearchPage] Property clicked:', property);
-    console.log('[SearchPage] Setting selectedProperty:', property);
+  const handlePropertyClick = useCallback((property: Property) => {
+    // Mark that we're setting property programmatically
+    settingPropertyRef.current = true;
     setSelectedProperty(property);
-  };
+    
+    // Reset flag after a delay to allow URL sync to complete
+    setTimeout(() => {
+      settingPropertyRef.current = false;
+    }, 500);
+  }, []);
 
   const handleClosePropertyModal = () => {
     setSelectedProperty(null);
@@ -554,18 +599,22 @@ function SearchPageContent() {
           </>
         )}
 
-        {isMobile ? (
-          <PropertyDetailsModalMobile
-            isOpen={!!selectedProperty}
-            property={selectedProperty ?? undefined}
-            onClose={handleClosePropertyModal}
-          />
-        ) : (
-          <PropertyDetailsModal
-            isOpen={!!selectedProperty}
-            property={selectedProperty ?? undefined}
-            onClose={handleClosePropertyModal}
-          />
+        {selectedProperty && (
+          isMobile ? (
+            <PropertyDetailsModalMobile
+              key={selectedProperty.id || selectedProperty.listingKey || selectedProperty.mlsNumber}
+              isOpen={!!selectedProperty}
+              property={selectedProperty}
+              onClose={handleClosePropertyModal}
+            />
+          ) : (
+            <PropertyDetailsModal
+              key={selectedProperty.id || selectedProperty.listingKey || selectedProperty.mlsNumber}
+              isOpen={!!selectedProperty}
+              property={selectedProperty}
+              onClose={handleClosePropertyModal}
+            />
+          )
         )}
 
         {isAuthenticated && (

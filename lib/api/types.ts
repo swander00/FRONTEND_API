@@ -71,8 +71,10 @@ export interface PropertyCardResponse {
   mlsStatus: string;
   transactionType: string;
   isNewListing: boolean;
-  listingAge: string;
-  originalEntryTimestamp: string;
+  listingAge: string; // ⚠️ DEPRECATED: Use originalEntryTimestamp with status prefix instead
+  originalEntryTimestamp: string; // Formatted timestamp: "10th Jun, 2025"
+  originalEntryTimestampRaw?: string; // Raw timestamp for filtering/comparison
+  statusDates?: StatusDates; // Status-specific dates (Sold, Leased, Removed)
   modificationTimestamp: string;
   listPrice: number;
   originalListPrice?: number;
@@ -149,6 +151,8 @@ export interface StatusDates {
   suspendedDate?: string;
   terminatedDate?: string;
   expirationDate?: string;
+  unavailableDate?: string;
+  withdrawnDate?: string;
 }
 
 export interface PropertyDetailsResponse {
@@ -182,7 +186,8 @@ export interface PropertyDetailsResponse {
   priceReductionAmount?: number;
   priceReductionPercent?: number;
   reductionNumber?: number;
-  originalEntryTimestamp: string;
+  originalEntryTimestamp: string; // Formatted timestamp: "10th Jun, 2025"
+  originalEntryTimestampRaw?: string; // Raw timestamp for filtering/comparison
   listDate: string;
   taxAnnualAmount?: number;
   taxYear?: number;

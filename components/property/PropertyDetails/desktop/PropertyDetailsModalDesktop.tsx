@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
@@ -37,10 +37,19 @@ export default function PropertyDetailsModalDesktop({ isOpen, property: rawPrope
   const [roomsExpanded, setRoomsExpanded] = useState(true);
   const [fullProperty, setFullProperty] = useState<Property | undefined>(rawProperty);
   const [isLoadingFullDetails, setIsLoadingFullDetails] = useState(false);
+  const fetchRef = React.useRef(false); // Prevent multiple fetches
+
+  // Update fullProperty when rawProperty prop changes
+  useEffect(() => {
+    if (rawProperty) {
+      setFullProperty(rawProperty);
+      fetchRef.current = false; // Reset fetch flag when property changes
+    }
+  }, [rawProperty]);
 
   // Fetch full property details if we don't have a complete images array
   useEffect(() => {
-    if (!isOpen || !rawProperty) return;
+    if (!isOpen || !rawProperty || fetchRef.current) return;
 
     const listingKey = rawProperty.listingKey || rawProperty.id || propertyId;
     // Check if we have multiple images OR a media array (indicating full details were fetched)
@@ -56,6 +65,7 @@ export default function PropertyDetailsModalDesktop({ isOpen, property: rawPrope
 
     // Otherwise, fetch full details
     if (listingKey && !isLoadingFullDetails) {
+      fetchRef.current = true; // Mark that we're fetching
       setIsLoadingFullDetails(true);
       api.properties.getDetails(listingKey)
         .then((response) => {
@@ -132,12 +142,31 @@ export default function PropertyDetailsModalDesktop({ isOpen, property: rawPrope
           setIsLoadingFullDetails(false);
         });
     }
-  }, [isOpen, rawProperty, propertyId, isLoadingFullDetails]);
+  }, [isOpen, rawProperty, propertyId]);
 
   const { property, rawProperty: resolvedProperty, galleryImages, specs, interest, statusGradient, rooms, agent } = usePropertyDetailsData(fullProperty);
 
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
+  // Show loading state if we're fetching full details
+  if (isLoadingFullDetails) {
+    return (
+      <SharedModal
+        open={isOpen}
+        onClose={() => onClose?.()}
+        title="Loading Property Details"
+        description="Please wait while we load the property information..."
+      >
+        <div className="text-center p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+        </div>
+      </SharedModal>
+    );
+  }
+
+  // Only show error if we're not loading and property is still missing
   if (!resolvedProperty || !property) {
     return (
       <SharedModal
@@ -196,8 +225,11 @@ export default function PropertyDetailsModalDesktop({ isOpen, property: rawPrope
     }
   };
 
+  console.log('[PropertyDetailsModalDesktop] About to render SharedModal - isOpen:', isOpen, 'type:', typeof isOpen);
+  const sharedModalOpen = Boolean(isOpen);
+  console.log('[PropertyDetailsModalDesktop] SharedModal open value:', sharedModalOpen);
   return (
-    <SharedModal open={isOpen} onClose={() => onClose?.()} title="" showCloseButton={false}>
+    <SharedModal open={sharedModalOpen} onClose={() => onClose?.()} title="" showCloseButton={false}>
       <div className="flex flex-col h-full max-h-[80vh]">
         <div className="flex items-center justify-between p-2 sm:p-4 border-b border-gray-200/60 bg-white/95 backdrop-blur-sm sticky top-0 z-10">
           <h2 className="text-sm sm:text-lg font-semibold text-gray-900">Property Details</h2>
