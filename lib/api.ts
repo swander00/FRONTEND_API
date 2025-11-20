@@ -96,3 +96,8 @@ export const API_ENDPOINTS = {
  */
 export { getApiBaseUrl };
 
+// Re-export the new API client and types for compatibility
+// This allows imports like: import { api } from '@/lib/api'
+export { api, type PropertyDetailsResponse, type PropertyMediaItem } from './api/index';
+export * from './api/types';
+
