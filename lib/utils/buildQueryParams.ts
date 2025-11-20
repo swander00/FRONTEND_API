@@ -3,6 +3,7 @@
  */
 
 import type { FiltersState } from '@/components/search/FiltersContainer/FiltersContext';
+import { timeRangeToDateFrom } from './dateFilters';
 
 export interface QueryParamsOptions {
   filters?: FiltersState | null;
@@ -223,6 +224,12 @@ export function buildQueryString(options: QueryParamsOptions): string {
   // Status filter
   if (filters.status) {
     params.append('status', filters.status);
+  }
+
+  // Date filter - convert timeRange to dateFrom ISO string
+  const dateFrom = timeRangeToDateFrom(filters.timeRange, filters.timeRangeCustomDate);
+  if (dateFrom) {
+    params.append('dateFrom', dateFrom);
   }
 
   // Search term

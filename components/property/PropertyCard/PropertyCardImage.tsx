@@ -25,7 +25,8 @@ export function PropertyCardImage({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
 
-  const handleFavorite = () => {
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click when clicking favorite button
     setIsFavorited(!isFavorited);
     onFavorite?.();
   };
@@ -100,7 +101,10 @@ export function PropertyCardImage({
             <button
               key={index}
               type="button"
-              onClick={() => setCurrentImageIndex(index)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent card click when clicking carousel dots
+                setCurrentImageIndex(index);
+              }}
               className={cn(
                 'h-1.5 w-1.5 rounded-full transition-colors',
                 index === currentImageIndex ? 'bg-white' : 'bg-white/50'
@@ -113,10 +117,12 @@ export function PropertyCardImage({
 
       {/* Bottom Right - Virtual Tour Button */}
       {property.hasVirtualTour && (
-        <VirtualTourButton
-          imageCount={property.images.length}
-          onClick={onTour}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <VirtualTourButton
+            imageCount={property.images.length}
+            onClick={onTour}
+          />
+        </div>
       )}
     </div>
   );

@@ -435,6 +435,8 @@ function SearchPageContent() {
   }, []);
 
   const handlePropertyClick = (property: Property) => {
+    console.log('[SearchPage] Property clicked:', property);
+    console.log('[SearchPage] Setting selectedProperty:', property);
     setSelectedProperty(property);
   };
 
