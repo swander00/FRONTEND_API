@@ -4,7 +4,6 @@ import type { AdvancedFiltersState } from "../state";
 type PropertyDetailField =
   | "keyword"
   | "propertyClass"
-  | "houseStyle"
   | "lotFrontage"
   | "lotDepth";
 
@@ -43,31 +42,13 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = Rea
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400 dark:focus:ring-blue-400/30"
             >
               <option value="">Select property class</option>
-              <option value="Residential Freehold">Residential Freehold</option>
-              <option value="Residential Condo">Residential Condo</option>
+              <option value="Freehold only">Freehold only</option>
+              <option value="Condo only">Condo only</option>
             </select>
           </label>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              House Style
-            </span>
-            <select
-              name="houseStyle"
-              value={values.houseStyle}
-              onChange={(event) => onFieldChange("houseStyle", event.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400 dark:focus:ring-blue-400/30"
-            >
-              <option value="">Select house style</option>
-              <option value="Bungalow">Bungalow</option>
-              <option value="Two-Storey">Two-Storey</option>
-              <option value="Split-Level">Split-Level</option>
-              <option value="Townhouse">Townhouse</option>
-              <option value="Loft">Loft</option>
-            </select>
-          </label>
           <label className="flex flex-col gap-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Lot Frontage

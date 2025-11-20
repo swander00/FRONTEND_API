@@ -11,26 +11,37 @@ import type { FiltersState } from '@/components/search/FiltersContainer/FiltersC
 import { DEFAULT_FILTERS_STATE } from '@/components/search/FiltersContainer/FiltersContext';
 import { PROPERTY_TYPE_GROUPS } from '@/lib/filters/options';
 
-// Extract the most common property types from PROPERTY_TYPE_GROUPS
-// These match the values used in the search filters
+// Property type values that match the database PropertyType field
+// Based on PropertyView.sql: PropertyType is normalized from PropertySubType
+// 'Att/Row/Townhouse' → 'Townhouse', others use PropertySubType as-is
 const PROPERTY_TYPE_TABS = [
   { label: 'All', value: null },
   { label: 'Detached', value: 'Detached' },
   { label: 'Semi-Detached', value: 'Semi-Detached' },
-  { label: 'Townhouse', value: 'Townhouse (Row)' }, // From PROPERTY_TYPE_GROUPS
-  { label: 'Condo', value: 'Condo Apartment' }, // From PROPERTY_TYPE_GROUPS
-  { label: 'Condo Townhouse', value: 'Condo Townhouse' }, // From PROPERTY_TYPE_GROUPS
+  { label: 'Townhouse', value: 'Townhouse' }, // Database normalizes 'Att/Row/Townhouse' to 'Townhouse'
+  { label: 'Condo', value: 'Condo Apartment' },
+  { label: 'Condo Townhouse', value: 'Condo Townhouse' },
 ] as const;
+
+// Stable empty array to prevent unnecessary re-renders
+const EMPTY_ARRAY: string[] = [];
 
 export function FeaturedProperties() {
   const router = useRouter();
   const [selectedPropertyType, setSelectedPropertyType] = useState<string | null>(null);
 
+  // Memoize propertyTypes array to prevent flickering
+  // This ensures the array reference only changes when selectedPropertyType changes
+  const propertyTypes = useMemo(() => {
+    return selectedPropertyType ? [selectedPropertyType] : EMPTY_ARRAY;
+  }, [selectedPropertyType]);
+
   // Build filters based on selected property type - memoized to prevent unnecessary re-renders
+  // The filters object will only be recreated when propertyTypes changes
   const filters: FiltersState = useMemo(() => ({
     ...DEFAULT_FILTERS_STATE,
-    propertyTypes: selectedPropertyType ? [selectedPropertyType] : [],
-  }), [selectedPropertyType]);
+    propertyTypes,
+  }), [propertyTypes]);
 
   const { properties, loading } = useProperties({
     page: 1,

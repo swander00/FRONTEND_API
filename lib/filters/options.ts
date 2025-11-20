@@ -192,8 +192,8 @@ export const OPEN_HOUSE_OPTIONS = [
 ] as const;
 
 export const PROPERTY_CLASS_OPTIONS = [
-  { label: 'Residential Freehold', value: 'Residential Freehold' },
-  { label: 'Residential Condo', value: 'Residential Condo' },
+  { label: 'Freehold only', value: 'Freehold only' },
+  { label: 'Condo only', value: 'Condo only' },
 ] as const;
 
 

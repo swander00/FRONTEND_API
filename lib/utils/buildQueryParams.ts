@@ -4,6 +4,7 @@
 
 import type { FiltersState } from '@/components/search/FiltersContainer/FiltersContext';
 import { timeRangeToDateFrom } from './dateFilters';
+import { HOUSE_STYLE_DISPLAY_TO_RAW } from '@/components/search/FiltersContainer/PrimaryFilters/AdvancedFilters/state';
 
 export interface QueryParamsOptions {
   filters?: FiltersState | null;
@@ -133,6 +134,13 @@ export function buildPropertiesQueryParams(options: QueryParamsOptions): Record<
 export function buildQueryString(options: QueryParamsOptions): string {
   const { filters, pagination, sortBy, searchTerm } = options;
   const params = new URLSearchParams();
+  
+  console.log('[buildQueryString] Called with filters:', {
+    hasFilters: !!filters,
+    hasAdvanced: !!filters?.advanced,
+    propertyClasses: filters?.advanced?.propertyClasses,
+    propertyClassesLength: filters?.advanced?.propertyClasses?.length
+  });
 
   // Pagination
   if (pagination) {
@@ -230,6 +238,49 @@ export function buildQueryString(options: QueryParamsOptions): string {
   const dateFrom = timeRangeToDateFrom(filters.timeRange, filters.timeRangeCustomDate);
   if (dateFrom) {
     params.append('dateFrom', dateFrom);
+  }
+
+  // Property class filter - map frontend values to database values
+  if (filters.advanced?.propertyClasses && filters.advanced.propertyClasses.length > 0) {
+    // Map frontend display values to database values
+    const propertyClassMapping: Record<string, string> = {
+      'Freehold only': 'Residential Freehold',
+      'Condo only': 'Residential Condo & Other',
+    };
+    
+    console.log('[buildQueryString] PropertyClass filter:', {
+      propertyClasses: filters.advanced.propertyClasses,
+      mapping: propertyClassMapping
+    });
+    
+    filters.advanced.propertyClasses.forEach((propertyClass) => {
+      const mappedValue = propertyClassMapping[propertyClass] || propertyClass;
+      console.log('[buildQueryString] Mapping propertyClass:', {
+        frontend: propertyClass,
+        mapped: mappedValue
+      });
+      params.append('propertyClass', mappedValue);
+    });
+  }
+
+  // House Style (ArchitecturalStyle) filter - map display names to raw database values
+  if (filters.advanced?.houseStyle && filters.advanced.houseStyle.length > 0) {
+    // Collect all raw values for selected display names
+    const rawValues = new Set<string>();
+    filters.advanced.houseStyle.forEach((displayName) => {
+      const rawValuesForDisplay = HOUSE_STYLE_DISPLAY_TO_RAW[displayName] || [];
+      rawValuesForDisplay.forEach((rawValue) => {
+        // Skip empty/null values
+        if (rawValue && rawValue.trim()) {
+          rawValues.add(rawValue);
+        }
+      });
+    });
+    
+    // Append each raw value as a separate parameter
+    rawValues.forEach((rawValue) => {
+      params.append('architecturalStyle', rawValue);
+    });
   }
 
   // Search term

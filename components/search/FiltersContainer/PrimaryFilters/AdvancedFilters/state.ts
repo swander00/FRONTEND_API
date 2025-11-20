@@ -11,7 +11,7 @@ export type RangeField =
 export type AdvancedFiltersState = {
   keyword: string;
   propertyClass: string;
-  houseStyle: string;
+  houseStyle: string[];
   lotFrontage: string;
   lotDepth: string;
   squareFootageMin: number;
@@ -109,10 +109,180 @@ export const BASEMENT_FEATURE_OPTIONS = [
 
 export const OPEN_HOUSE_TIMING_OPTIONS = ["All", "Today", "Tomorrow", "Weekend"] as const;
 
+/**
+ * House Style (ArchitecturalStyle) filter structure
+ * Categories with frontend display names and raw-value mappings
+ */
+export type HouseStyleOption = {
+  displayName: string;
+  rawValues: string[];
+};
+
+export type HouseStyleCategory = {
+  categoryName: string;
+  options: HouseStyleOption[];
+};
+
+export const HOUSE_STYLE_CATEGORIES: HouseStyleCategory[] = [
+  {
+    categoryName: "Bungalows",
+    options: [
+      {
+        displayName: "Bungalow",
+        rawValues: ["Bungalow"],
+      },
+      {
+        displayName: "Raised Bungalow",
+        rawValues: ["Bungalow-Raised"],
+      },
+      {
+        displayName: "Bungaloft",
+        rawValues: ["Bungaloft"],
+      },
+    ],
+  },
+  {
+    categoryName: "Storeys",
+    options: [
+      {
+        displayName: "1.5 Storey",
+        rawValues: ["1 1/2 Storey"],
+      },
+      {
+        displayName: "1 Storey",
+        rawValues: ["1 Storey/Apt"],
+      },
+      {
+        displayName: "2 Storey",
+        rawValues: ["2-Storey"],
+      },
+      {
+        displayName: "2.5 Storey",
+        rawValues: ["2 1/2 Storey"],
+      },
+      {
+        displayName: "3 Storey",
+        rawValues: ["3-Storey"],
+      },
+      {
+        displayName: "Multi-Level",
+        rawValues: ["Multi-Level"],
+      },
+    ],
+  },
+  {
+    categoryName: "Split-Level Homes",
+    options: [
+      {
+        displayName: "Backsplit",
+        rawValues: ["Backsplit 3", "Backsplit 4", "Backsplit 5"],
+      },
+      {
+        displayName: "Sidesplit",
+        rawValues: ["Sidesplit", "Sidesplit 3", "Sidesplit 4", "Sidesplit 5"],
+      },
+    ],
+  },
+  {
+    categoryName: "Apartments / Condos",
+    options: [
+      {
+        displayName: "Apartment",
+        rawValues: ["Apartment"],
+      },
+      {
+        displayName: "Bachelor / Studio",
+        rawValues: ["Bachelor/Studio"],
+      },
+      {
+        displayName: "Stacked Townhouse",
+        rawValues: ["Stacked Townhouse"],
+      },
+    ],
+  },
+  {
+    categoryName: "Lofts",
+    options: [
+      {
+        displayName: "Loft",
+        rawValues: ["Loft"],
+      },
+      {
+        displayName: "Industrial Loft",
+        rawValues: ["Industrial Loft"],
+      },
+    ],
+  },
+  {
+    categoryName: "Cottage / Chalet",
+    options: [
+      {
+        displayName: "Chalet",
+        rawValues: ["Chalet"],
+      },
+      {
+        displayName: "Log Home",
+        rawValues: ["Log"],
+      },
+    ],
+  },
+  {
+    categoryName: "Contemporary / Modern",
+    options: [
+      {
+        displayName: "Contemporary",
+        rawValues: ["Contemporary"],
+      },
+    ],
+  },
+  {
+    categoryName: "Other / Misc",
+    options: [
+      {
+        displayName: "Garden House",
+        rawValues: ["Garden House"],
+      },
+      {
+        displayName: "Other",
+        rawValues: ["Other", "Unknown", ""],
+      },
+    ],
+  },
+];
+
+/**
+ * Get all display names from house style categories
+ */
+export const HOUSE_STYLE_DISPLAY_NAMES = HOUSE_STYLE_CATEGORIES.flatMap((category) =>
+  category.options.map((option) => option.displayName)
+);
+
+/**
+ * Map raw database values to frontend display names
+ */
+export const HOUSE_STYLE_RAW_TO_DISPLAY: Record<string, string> = {};
+HOUSE_STYLE_CATEGORIES.forEach((category) => {
+  category.options.forEach((option) => {
+    option.rawValues.forEach((rawValue) => {
+      HOUSE_STYLE_RAW_TO_DISPLAY[rawValue] = option.displayName;
+    });
+  });
+});
+
+/**
+ * Map frontend display names to raw database values
+ */
+export const HOUSE_STYLE_DISPLAY_TO_RAW: Record<string, string[]> = {};
+HOUSE_STYLE_CATEGORIES.forEach((category) => {
+  category.options.forEach((option) => {
+    HOUSE_STYLE_DISPLAY_TO_RAW[option.displayName] = option.rawValues;
+  });
+});
+
 export const DEFAULT_FILTERS: AdvancedFiltersState = {
   keyword: "",
   propertyClass: "",
-  houseStyle: "",
+  houseStyle: [],
   lotFrontage: "",
   lotDepth: "",
   squareFootageMin: RANGE_CONFIG.squareFootage.min,
@@ -151,6 +321,10 @@ export type AdvancedFiltersAction =
       value: (typeof BASEMENT_FEATURE_OPTIONS)[number];
     }
   | {
+      type: "TOGGLE_HOUSE_STYLE";
+      value: string; // display name
+    }
+  | {
       type: "SET_OPEN_HOUSE";
       value: (typeof OPEN_HOUSE_TIMING_OPTIONS)[number];
     }
@@ -171,6 +345,26 @@ const normaliseBasementFeatures = (value: unknown): string[] => {
 
   const filtered = value.filter((item) => typeof item === "string") as string[];
   const unique = Array.from(new Set(filtered));
+  return unique;
+};
+
+const normaliseHouseStyle = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    // Handle legacy string values
+    if (typeof value === "string" && value.trim()) {
+      // Try to map old string value to new display name
+      const displayName = HOUSE_STYLE_RAW_TO_DISPLAY[value] || value;
+      if (HOUSE_STYLE_DISPLAY_NAMES.includes(displayName)) {
+        return [displayName];
+      }
+    }
+    return [];
+  }
+
+  const filtered = value.filter((item) => typeof item === "string") as string[];
+  // Validate that all values are valid display names
+  const valid = filtered.filter((item) => HOUSE_STYLE_DISPLAY_NAMES.includes(item));
+  const unique = Array.from(new Set(valid));
   return unique;
 };
 
@@ -201,6 +395,7 @@ export const normaliseFilters = (incoming?: Partial<AdvancedFiltersState>): Adva
   });
 
   next.basementFeatures = normaliseBasementFeatures(next.basementFeatures);
+  next.houseStyle = normaliseHouseStyle(next.houseStyle);
 
   if (!OPEN_HOUSE_TIMING_OPTIONS.includes(next.openHouseTiming as typeof OPEN_HOUSE_TIMING_OPTIONS[number])) {
     next.openHouseTiming = DEFAULT_FILTERS.openHouseTiming;
@@ -271,6 +466,25 @@ const toggleBasementFeature = (state: AdvancedFiltersState, value: string): Adva
   };
 };
 
+const toggleHouseStyle = (state: AdvancedFiltersState, displayName: string): AdvancedFiltersState => {
+  const current = Array.isArray(state.houseStyle) ? [...state.houseStyle] : [];
+
+  // Validate display name
+  if (!HOUSE_STYLE_DISPLAY_NAMES.includes(displayName)) {
+    return state;
+  }
+
+  const exists = current.includes(displayName);
+  const next = exists
+    ? current.filter((style) => style !== displayName)
+    : [...current, displayName];
+
+  return {
+    ...state,
+    houseStyle: next,
+  };
+};
+
 export const advancedFiltersReducer: Reducer<AdvancedFiltersState, AdvancedFiltersAction> = (state, action) => {
   switch (action.type) {
     case "SET_FIELD":
@@ -282,6 +496,8 @@ export const advancedFiltersReducer: Reducer<AdvancedFiltersState, AdvancedFilte
       return updateRangeState(state, action.field, action.bound, action.value);
     case "TOGGLE_BASEMENT_FEATURE":
       return toggleBasementFeature(state, action.value);
+    case "TOGGLE_HOUSE_STYLE":
+      return toggleHouseStyle(state, action.value);
     case "SET_OPEN_HOUSE":
       return {
         ...state,

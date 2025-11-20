@@ -19,6 +19,7 @@ import {
 } from "./state";
 import {
   BasementFeaturesSection,
+  HouseStyleSection,
   OpenHouseSection,
   PropertyDetailsSection,
   PropertyFeaturesSection,
@@ -172,6 +173,7 @@ const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
 
   const handleFieldChange = useCallback(
     (field: keyof AdvancedFiltersState, value: string) => {
+      console.log('[AdvancedFiltersModal] handleFieldChange:', { field, value });
       dispatch({ type: "SET_FIELD", field, value });
     },
     [],
@@ -180,6 +182,13 @@ const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
   const handleBasementToggle = useCallback(
     (value: (typeof BASEMENT_FEATURE_OPTIONS)[number]) => {
       dispatch({ type: "TOGGLE_BASEMENT_FEATURE", value });
+    },
+    [],
+  );
+
+  const handleHouseStyleToggle = useCallback(
+    (displayName: string) => {
+      dispatch({ type: "TOGGLE_HOUSE_STYLE", value: displayName });
     },
     [],
   );
@@ -200,11 +209,10 @@ const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
     () => ({
       keyword: state.keyword,
       propertyClass: state.propertyClass,
-      houseStyle: state.houseStyle,
       lotFrontage: state.lotFrontage,
       lotDepth: state.lotDepth,
     }),
-    [state.keyword, state.propertyClass, state.houseStyle, state.lotFrontage, state.lotDepth],
+    [state.keyword, state.propertyClass, state.lotFrontage, state.lotDepth],
   );
 
   const propertyFeatureValues = useMemo(
@@ -217,7 +225,12 @@ const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
   );
 
   const handleApply = useCallback(() => {
+    console.log('[AdvancedFiltersModal] handleApply - state before onApply:', {
+      propertyClass: state.propertyClass,
+      fullState: state
+    });
     onApply(state);
+    console.log('[AdvancedFiltersModal] handleApply - after onApply called');
     initialRef.current = state;
     setIsDirty(false);
     onClose();
@@ -263,6 +276,7 @@ const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
         <div className="flex-1 overflow-y-auto px-6 py-6">
           <form className="space-y-6" onSubmit={(event) => event.preventDefault()}>
             <PropertyDetailsSection values={propertyDetailsValues} onFieldChange={handleFieldChange} />
+            <HouseStyleSection selected={state.houseStyle} onToggle={handleHouseStyleToggle} />
             <RangeFiltersSection values={state} onRangeChange={handleRangeChange} />
             <PropertyFeaturesSection values={propertyFeatureValues} onFieldChange={handleFieldChange} />
             <div className="grid gap-4 sm:grid-cols-2">

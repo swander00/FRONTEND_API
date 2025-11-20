@@ -140,7 +140,7 @@ export function ActiveFiltersBar({
       filters.advanced.squareFootage.max !== defaultAdvanced.squareFootage.max
     )
       advancedCount += 1;
-    if (filters.advanced.houseStyle !== defaultAdvanced.houseStyle) advancedCount += 1;
+    if (filters.advanced.houseStyle.length > 0) advancedCount += 1;
     if (filters.advanced.lotFrontage !== defaultAdvanced.lotFrontage) advancedCount += 1;
     if (filters.advanced.lotDepth !== defaultAdvanced.lotDepth) advancedCount += 1;
     if (filters.advanced.maintenanceFee.min != null || filters.advanced.maintenanceFee.max != null)

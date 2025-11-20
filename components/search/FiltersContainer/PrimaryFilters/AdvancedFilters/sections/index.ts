@@ -16,5 +16,8 @@ export type { PropertyFeaturesSectionProps } from './PropertyFeaturesSection';
 export { BasementFeaturesSection } from './BasementFeaturesSection';
 export type { BasementFeaturesSectionProps } from './BasementFeaturesSection';
 
+export { HouseStyleSection } from './HouseStyleSection';
+export type { HouseStyleSectionProps } from './HouseStyleSection';
+
 export { OpenHouseSection } from './OpenHouseSection';
 export type { OpenHouseSectionProps } from './OpenHouseSection';

@@ -46,7 +46,7 @@ function mapContextAdvancedToModal(advanced: FiltersState['advanced']): Advanced
   return {
     keyword: advanced.keywords.join(', '),
     propertyClass: advanced.propertyClasses[0] ?? '',
-    houseStyle: advanced.houseStyle ?? '',
+    houseStyle: advanced.houseStyle ?? [],
     lotFrontage: advanced.lotFrontage ?? '',
     lotDepth: advanced.lotDepth ?? '',
     squareFootageMin: advanced.squareFootage.min ?? ADVANCED_MODAL_DEFAULTS.squareFootageMin,
@@ -83,16 +83,24 @@ function mapModalToContextAdvanced(state: AdvancedFiltersState): FiltersState['a
     max: toNullable(maxValue, defaults.max),
   });
 
+  const propertyClasses = state.propertyClass
+    ? [state.propertyClass as FiltersState['advanced']['propertyClasses'][number]]
+    : [];
+  
+  console.log('[mapModalToContextAdvanced] PropertyClass mapping:', {
+    statePropertyClass: state.propertyClass,
+    propertyClasses,
+    type: typeof state.propertyClass
+  });
+  
   return {
     keywords: splitKeywords(state.keyword),
-    propertyClasses: state.propertyClass
-      ? [state.propertyClass as FiltersState['advanced']['propertyClasses'][number]]
-      : [],
+    propertyClasses,
     squareFootage: {
       min: toNullable(state.squareFootageMin, ADVANCED_MODAL_DEFAULTS.squareFootageMin),
       max: toNullable(state.squareFootageMax, ADVANCED_MODAL_DEFAULTS.squareFootageMax),
     },
-    houseStyle: state.houseStyle || null,
+    houseStyle: state.houseStyle.length > 0 ? state.houseStyle : [],
     lotFrontage: state.lotFrontage || null,
     lotDepth: state.lotDepth || null,
     maintenanceFee: buildSliderRange(
@@ -194,13 +202,29 @@ export function PrimaryFilters() {
   const closeModal = () => setActiveModal(null);
 
   const advancedInitialFilters = useMemo(
-    () => mapContextAdvancedToModal(filters.advanced),
+    () => {
+      const mapped = mapContextAdvancedToModal(filters.advanced);
+      console.log('[PrimaryFilters] advancedInitialFilters computed:', {
+        filtersAdvanced: filters.advanced,
+        propertyClasses: filters.advanced.propertyClasses,
+        mappedPropertyClass: mapped.propertyClass
+      });
+      return mapped;
+    },
     [filters.advanced],
   );
 
   const handleAdvancedApply = useCallback(
     (nextState: AdvancedFiltersState) => {
-      dispatch({ type: 'ADVANCED_SET_ALL', payload: mapModalToContextAdvanced(nextState) });
+      console.log('[PrimaryFilters] handleAdvancedApply called:', {
+        propertyClass: nextState.propertyClass,
+        fullState: nextState
+      });
+      const mapped = mapModalToContextAdvanced(nextState);
+      console.log('[PrimaryFilters] Mapped to context:', {
+        propertyClasses: mapped.propertyClasses
+      });
+      dispatch({ type: 'ADVANCED_SET_ALL', payload: mapped });
     },
     [dispatch],
   );

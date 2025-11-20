@@ -44,7 +44,7 @@ export type FiltersState = {
     keywords: string[];
     propertyClasses: PropertyClassOption[];
     squareFootage: NumericRange;
-    houseStyle: string | null;
+    houseStyle: string[];
     lotFrontage: string | null;
     lotDepth: string | null;
     maintenanceFee: SliderRange;
@@ -74,7 +74,7 @@ type FiltersAction =
   | { type: 'ADVANCED_SET_KEYWORDS'; payload: string[] }
   | { type: 'ADVANCED_SET_PROPERTY_CLASSES'; payload: PropertyClassOption[] }
   | { type: 'ADVANCED_SET_SQUARE_FOOTAGE'; payload: NumericRange }
-  | { type: 'ADVANCED_SET_HOUSE_STYLE'; payload: string | null }
+  | { type: 'ADVANCED_SET_HOUSE_STYLE'; payload: string[] }
   | { type: 'ADVANCED_SET_LOT_FRONTAGE'; payload: string | null }
   | { type: 'ADVANCED_SET_LOT_DEPTH'; payload: string | null }
   | { type: 'ADVANCED_SET_MAINTENANCE_FEE'; payload: SliderRange }
@@ -104,7 +104,7 @@ export const DEFAULT_FILTERS_STATE: FiltersState = {
     keywords: [],
     propertyClasses: [],
     squareFootage: { min: null, max: null },
-    houseStyle: null,
+    houseStyle: [],
     lotFrontage: null,
     lotDepth: null,
     maintenanceFee: { min: null, max: null, preset: 'Any' },
@@ -213,6 +213,10 @@ function filtersReducer(state: FiltersState, action: FiltersAction): FiltersStat
     case 'ADVANCED_SET_OPEN_HOUSE':
       return { ...state, advanced: { ...state.advanced, openHouse: action.payload } };
     case 'ADVANCED_SET_ALL':
+      console.log('[FiltersContext] ADVANCED_SET_ALL reducer:', {
+        propertyClasses: action.payload.propertyClasses,
+        fullPayload: action.payload
+      });
       return { ...state, advanced: action.payload };
     case 'RESET_ALL':
       return DEFAULT_FILTERS_STATE;

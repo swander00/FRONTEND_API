@@ -42,6 +42,13 @@ export function useProperties(options: UsePropertiesOptions = {}) {
       setError(null);
 
       // Build query string with all parameters
+      console.log('[useProperties] Before buildQueryString:', {
+        hasFilters: !!filters,
+        hasAdvanced: !!filters?.advanced,
+        propertyClasses: filters?.advanced?.propertyClasses,
+        filtersString: filters ? JSON.stringify(filters, null, 2) : 'null'
+      });
+      
       const queryString = buildQueryString({
         filters,
         pagination: { page, pageSize },
@@ -49,9 +56,8 @@ export function useProperties(options: UsePropertiesOptions = {}) {
         searchTerm,
       });
 
-      console.log('Query string:', queryString);
-      console.log('Filters:', filters ? JSON.stringify(filters, null, 2) : 'null');
-      console.log('Full URL:', `${API_ENDPOINTS.properties}?${queryString}`);
+      console.log('[useProperties] Query string:', queryString);
+      console.log('[useProperties] Full URL:', `${API_ENDPOINTS.properties}?${queryString}`);
 
       apiGetWithQueryString<PropertiesResponse>(API_ENDPOINTS.properties, queryString)
       .then((data) => {
