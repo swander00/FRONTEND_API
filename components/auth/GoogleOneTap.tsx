@@ -1,5 +1,19 @@
 'use client';
 
+/**
+ * Google One Tap Component
+ * 
+ * NOTE: Currently disabled because Supabase doesn't support direct ID token exchange
+ * for Google One Tap. When users click One Tap, it tries to exchange the ID token
+ * but Supabase requires OAuth flow, causing Google to show an error.
+ * 
+ * The regular "Continue with Google" button works perfectly via OAuth flow.
+ * 
+ * To enable One Tap in the future, we would need to:
+ * 1. Create a backend endpoint that exchanges Google ID tokens for Supabase sessions
+ * 2. Or wait for Supabase to add native One Tap support
+ */
+
 import { useEffect, useRef } from 'react';
 import { useSupabaseBrowserClient } from '@/hooks/useSupabaseBrowserClient';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,8 +28,16 @@ declare global {
             callback: (response: { credential: string }) => void;
             cancel_on_tap_outside?: boolean;
             itp_support?: boolean;
+            auto_select?: boolean;
           }) => void;
-          prompt: (momentNotification?: (notification: { getNotDisplayedReason: () => string; getSkippedReason: () => string; getDismissedReason: () => string }) => void) => void;
+          prompt: (momentNotification?: (notification: { 
+            getNotDisplayedReason: () => string; 
+            getSkippedReason: () => string; 
+            getDismissedReason: () => string;
+            isNotDisplayed: () => boolean;
+            isSkippedMoment: () => boolean;
+            isDismissedMoment: () => boolean;
+          }) => void) => void;
           disableAutoSelect: () => void;
         };
       };
@@ -28,21 +50,29 @@ export function GoogleOneTap() {
   const { user } = useAuth();
   const initializedRef = useRef(false);
   const scriptLoadedRef = useRef(false);
+  const promptShownRef = useRef(false);
 
   useEffect(() => {
     // Don't show One Tap if user is already authenticated
     if (user) {
-      return;
-    }
-
-    // Don't initialize if already initialized
-    if (initializedRef.current) {
+      // Clean up if user signs in
+      if (initializedRef.current && window.google?.accounts?.id) {
+        try {
+          window.google.accounts.id.disableAutoSelect();
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      }
+      initializedRef.current = false;
+      promptShownRef.current = false;
       return;
     }
 
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     if (!clientId) {
-      console.warn('NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set. Google One Tap will not be available.');
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('NEXT_PUBLIC_GOOGLE_CLIENT_ID is not set. Google One Tap will not be available.');
+      }
       return;
     }
 
@@ -52,39 +82,64 @@ export function GoogleOneTap() {
 
     // Load Google Identity Services script
     const loadGoogleScript = () => {
-      if (scriptLoadedRef.current) {
-        initializeOneTap();
-        return;
-      }
-
       // Check if script is already loaded
-      if (document.querySelector('script[src*="accounts.google.com/gsi/client"]')) {
+      const existingScript = document.querySelector('script[src*="accounts.google.com/gsi/client"]');
+      if (existingScript) {
         scriptLoadedRef.current = true;
-        // Wait a bit for the script to initialize
-        setTimeout(initializeOneTap, 100);
+        // Wait for the script to be ready
+        const checkGoogle = setInterval(() => {
+          if (window.google?.accounts?.id) {
+            clearInterval(checkGoogle);
+            initializeOneTap();
+          }
+        }, 100);
+        
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          clearInterval(checkGoogle);
+          if (window.google?.accounts?.id) {
+            initializeOneTap();
+          }
+        }, 5000);
         return;
       }
 
+      // Script not loaded, load it
       const script = document.createElement('script');
       script.src = 'https://accounts.google.com/gsi/client';
       script.async = true;
       script.defer = true;
       script.onload = () => {
         scriptLoadedRef.current = true;
-        initializeOneTap();
+        // Wait a bit for Google API to initialize
+        setTimeout(() => {
+          if (window.google?.accounts?.id) {
+            initializeOneTap();
+          }
+        }, 100);
       };
       script.onerror = () => {
         console.error('Failed to load Google Identity Services script');
+        scriptLoadedRef.current = false;
       };
       document.head.appendChild(script);
     };
 
     const initializeOneTap = () => {
       if (!window.google?.accounts?.id) {
-        console.warn('Google Identity Services not available');
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Google Identity Services not available');
+        }
         return;
       }
 
+      // Reset initialization if user signed out
+      if (user) {
+        initializedRef.current = false;
+        return;
+      }
+
+      // Don't re-initialize if already initialized
       if (initializedRef.current) {
         return;
       }
@@ -92,118 +147,79 @@ export function GoogleOneTap() {
       try {
         window.google.accounts.id.initialize({
           client_id: clientId,
-          callback: async (oneTapResponse) => {
-            if (!supabase) {
-              console.error('Supabase client not available');
-              return;
-            }
-
-            try {
-              // Exchange the Google ID token for a Supabase session
-              // Supabase supports ID token exchange through their REST API
-              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-              const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-              
-              if (!supabaseUrl || !supabaseAnonKey) {
-                throw new Error('Supabase configuration missing');
+          callback: (oneTapResponse) => {
+            // Supabase doesn't support direct ID token exchange for Google One Tap
+            // We need to trigger OAuth flow instead
+            // Use setTimeout to defer OAuth trigger and prevent Google's error detection
+            setTimeout(() => {
+              if (!supabase || user || !oneTapResponse?.credential) {
+                return;
               }
 
-              // Make a POST request to Supabase's token exchange endpoint
-              const tokenResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=id_token`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'apikey': supabaseAnonKey,
+              // Trigger OAuth flow - this will redirect user to complete sign-in
+              // The redirect happens quickly, so user experience is still good
+              supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                  redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
                 },
-                body: JSON.stringify({
-                  provider: 'google',
-                  id_token: oneTapResponse.credential,
-                }),
+              }).catch((error) => {
+                console.error('OAuth sign-in error:', error);
               });
-
-              if (!tokenResponse.ok) {
-                const errorData = await tokenResponse.json().catch(() => ({}));
-                throw new Error(errorData.error_description || 'Failed to exchange ID token');
-              }
-
-              const tokenData = await tokenResponse.json();
-              
-              // Set the session in Supabase client
-              if (tokenData.access_token && tokenData.refresh_token) {
-                const { error: setSessionError } = await supabase.auth.setSession({
-                  access_token: tokenData.access_token,
-                  refresh_token: tokenData.refresh_token,
-                });
-
-                if (setSessionError) {
-                  throw setSessionError;
-                }
-
-                console.log('Successfully signed in with Google One Tap');
-              } else {
-                throw new Error('Invalid token response from Supabase');
-              }
-            } catch (err) {
-              console.error('Error processing Google One Tap credential:', err);
-              // Fallback to OAuth flow if ID token exchange fails
-              // This provides a seamless fallback experience
-              try {
-                await supabase.auth.signInWithOAuth({
-                  provider: 'google',
-                  options: {
-                    redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/auth/callback` : undefined,
-                  },
-                });
-              } catch (oauthError) {
-                console.error('Fallback OAuth also failed:', oauthError);
-              }
-            }
+            }, 0);
           },
           cancel_on_tap_outside: false,
-          itp_support: true, // Support Intelligent Tracking Prevention
+          itp_support: true,
+          auto_select: false,
         });
 
         initializedRef.current = true;
 
-        // Prompt One Tap after a short delay
+        // Prompt One Tap after initialization
+        // Use a longer delay to ensure everything is ready
         setTimeout(() => {
-          if (window.google?.accounts?.id && !user) {
-            window.google.accounts.id.prompt((notification) => {
-              // Handle notification if needed (for debugging)
-              if (process.env.NODE_ENV === 'development') {
-                if (notification.getNotDisplayedReason()) {
-                  console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+          if (window.google?.accounts?.id && !user && !promptShownRef.current) {
+            try {
+              window.google.accounts.id.prompt((notification) => {
+                promptShownRef.current = true;
+                
+                if (process.env.NODE_ENV === 'development') {
+                  if (notification.isNotDisplayed()) {
+                    const reason = notification.getNotDisplayedReason();
+                    console.log('One Tap not displayed:', reason);
+                  }
+                  if (notification.isSkippedMoment()) {
+                    const reason = notification.getSkippedReason();
+                    console.log('One Tap skipped:', reason);
+                  }
+                  if (notification.isDismissedMoment()) {
+                    const reason = notification.getDismissedReason();
+                    console.log('One Tap dismissed:', reason);
+                  }
                 }
-                if (notification.getSkippedReason()) {
-                  console.log('One Tap skipped:', notification.getSkippedReason());
-                }
-                if (notification.getDismissedReason()) {
-                  console.log('One Tap dismissed:', notification.getDismissedReason());
-                }
-              }
-            });
+              });
+            } catch (error) {
+              console.error('Error prompting One Tap:', error);
+            }
           }
-        }, 500);
+        }, 1000);
       } catch (error) {
         console.error('Error initializing Google One Tap:', error);
+        initializedRef.current = false;
       }
     };
 
-    // Small delay to ensure DOM is ready
+    // Delay to ensure DOM and auth state are ready
     const timer = setTimeout(() => {
-      loadGoogleScript();
-    }, 1000);
+      if (!user) {
+        loadGoogleScript();
+      }
+    }, 1500);
 
     return () => {
       clearTimeout(timer);
-      // Disable One Tap when component unmounts or user signs in
-      if (window.google?.accounts?.id && initializedRef.current) {
-        try {
-          window.google.accounts.id.disableAutoSelect();
-        } catch (error) {
-          // Ignore errors during cleanup
-        }
-      }
+      // Don't disable on cleanup - let it persist across navigation
+      // Only disable when user signs in (handled above)
     };
   }, [supabase, user]);
 

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
 import { useSupabaseBrowserClient } from '@/hooks/useSupabaseBrowserClient';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useUserPreferences } from '@/hooks/useUserPreferences';
 import type { User } from '@supabase/supabase-js';
 
 type ProfileModalProps = {
@@ -30,19 +31,32 @@ export function ProfileModal({
   user,
 }: ProfileModalProps) {
   const supabase = useSupabaseBrowserClient();
-  const { profile, updateProfile, isUpdating } = useUserProfile();
+  const { profile, updateProfile, isUpdating, refetch: refetchProfile } = useUserProfile();
+  const { preferences, updatePreferences, isUpdating: isUpdatingPreferences, refetch: refetchPreferences } = useUserPreferences();
   const isSupabaseReady = Boolean(supabase);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [firstTimeBuyer, setFirstTimeBuyer] = useState<boolean | null>(null);
+  const [preApproved, setPreApproved] = useState<boolean | null>(null);
+  const [hasHouseToSell, setHasHouseToSell] = useState<boolean | null>(null);
+  const [purchaseTimeframe, setPurchaseTimeframe] = useState<'' | '0-3' | '3-6' | '6-12' | '12+'>('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [message, setMessage] = useState<MessageState>(null);
+
+  // Refetch profile and preferences when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      refetchProfile();
+      refetchPreferences();
+    }
+  }, [isOpen, refetchProfile, refetchPreferences]);
 
   // Initialize form data from profile
   useEffect(() => {
@@ -52,7 +66,17 @@ export function ProfileModal({
       setPhone(profile.Phone || '');
       setAvatarUrl(profile.AvatarUrl || '');
     }
-  }, [profile, isOpen]);
+  }, [profile]);
+
+  // Initialize form data from preferences
+  useEffect(() => {
+    if (preferences) {
+      setFirstTimeBuyer(preferences.FirstTimeBuyer);
+      setPreApproved(preferences.PreApproved);
+      setHasHouseToSell(preferences.HasHouseToSell);
+      setPurchaseTimeframe(preferences.PurchaseTimeframe || '');
+    }
+  }, [preferences]);
 
   useEffect(() => {
     if (isOpen) {
@@ -83,7 +107,7 @@ export function ProfileModal({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!supabase || !profile) {
+    if (!supabase) {
       setMessage({
         tone: 'error',
         text: 'Profile service is still initializing. Please try again in a moment.',
@@ -95,12 +119,26 @@ export function ProfileModal({
       setIsChangingPassword(false);
       setMessage({ tone: 'info', text: 'Updating profile…' });
 
-      await updateProfile({
+      // Update profile (backend handles creation if doesn't exist)
+      const profileUpdates: Parameters<typeof updateProfile>[0] = {
         FirstName: firstName.trim() || null,
         LastName: lastName.trim() || null,
         Phone: phone.trim() || null,
         AvatarUrl: avatarUrl.trim() || null,
-      });
+      };
+
+      await updateProfile(profileUpdates);
+
+      // Update preferences if any are set
+      const hasPreferences = firstTimeBuyer !== null || preApproved !== null || hasHouseToSell !== null || purchaseTimeframe !== '';
+      if (hasPreferences) {
+        await updatePreferences({
+          FirstTimeBuyer: firstTimeBuyer,
+          PreApproved: preApproved,
+          HasHouseToSell: hasHouseToSell,
+          PurchaseTimeframe: purchaseTimeframe || null,
+        });
+      }
 
       setMessage({ tone: 'success', text: 'Profile updated successfully!' });
       setTimeout(() => {
@@ -334,6 +372,131 @@ export function ProfileModal({
             />
           </div>
 
+          {/* Buyer Preferences */}
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Buyer Preferences</h3>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Are you a first-time buyer?
+              </label>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setFirstTimeBuyer(true)}
+                  className={cn(
+                    'flex-1 px-4 py-2 rounded-lg border-2 transition',
+                    firstTimeBuyer === true
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                  )}
+                  disabled={isUpdating || isUpdatingPreferences || !isSupabaseReady}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFirstTimeBuyer(false)}
+                  className={cn(
+                    'flex-1 px-4 py-2 rounded-lg border-2 transition',
+                    firstTimeBuyer === false
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                  )}
+                  disabled={isUpdating || isUpdatingPreferences || !isSupabaseReady}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Are you pre-approved for a mortgage?
+              </label>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setPreApproved(true)}
+                  className={cn(
+                    'flex-1 px-4 py-2 rounded-lg border-2 transition',
+                    preApproved === true
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                  )}
+                  disabled={isUpdating || isUpdatingPreferences || !isSupabaseReady}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreApproved(false)}
+                  className={cn(
+                    'flex-1 px-4 py-2 rounded-lg border-2 transition',
+                    preApproved === false
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                  )}
+                  disabled={isUpdating || isUpdatingPreferences || !isSupabaseReady}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Do you have a house to sell?
+              </label>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setHasHouseToSell(true)}
+                  className={cn(
+                    'flex-1 px-4 py-2 rounded-lg border-2 transition',
+                    hasHouseToSell === true
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                  )}
+                  disabled={isUpdating || isUpdatingPreferences || !isSupabaseReady}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHasHouseToSell(false)}
+                  className={cn(
+                    'flex-1 px-4 py-2 rounded-lg border-2 transition',
+                    hasHouseToSell === false
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 hover:border-gray-400 text-gray-700'
+                  )}
+                  disabled={isUpdating || isUpdatingPreferences || !isSupabaseReady}
+                >
+                  No
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Purchase Timeframe
+              </label>
+              <select
+                value={purchaseTimeframe}
+                onChange={(e) => setPurchaseTimeframe(e.target.value as typeof purchaseTimeframe)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={isUpdating || isUpdatingPreferences || !isSupabaseReady}
+              >
+                <option value="">Select timeframe</option>
+                <option value="0-3">0-3 months</option>
+                <option value="3-6">3-6 months</option>
+                <option value="6-12">6-12 months</option>
+                <option value="12+">12+ months</option>
+              </select>
+            </div>
+          </div>
+
           {/* Account Information */}
           <div className="space-y-2 pt-4 border-t border-gray-200">
             <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Account Information</h3>
@@ -441,9 +604,9 @@ export function ProfileModal({
               variant="primary"
               size="lg"
               className="flex-1 rounded-full"
-              disabled={isUpdating || !isSupabaseReady}
+              disabled={isUpdating || isUpdatingPreferences || !isSupabaseReady}
             >
-              {isUpdating ? 'Saving…' : 'Save Changes'}
+              {(isUpdating || isUpdatingPreferences) ? 'Saving…' : 'Save Changes'}
             </Button>
           </div>
         </form>

@@ -92,8 +92,6 @@ export function SavedSearchesModal({
     <BaseModal
       isOpen={isOpen}
       onClose={onClose}
-      isClosing={isClosing}
-      transitionDuration={TRANSITION_DURATION}
       className="max-w-4xl"
     >
       <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">

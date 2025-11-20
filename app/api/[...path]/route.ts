@@ -7,7 +7,33 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://apibackend-production-696e.up.railway.app';
+// Determine backend URL based on environment
+// For local development, use localhost:8080
+// For production, use NEXT_PUBLIC_BACKEND_URL or fallback to Railway production URL
+const getBackendUrl = (): string => {
+  // Check if we're in development mode
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // If NEXT_PUBLIC_BACKEND_URL is explicitly set, use it
+  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+    return process.env.NEXT_PUBLIC_BACKEND_URL;
+  }
+  
+  // If NEXT_PUBLIC_API_URL is set, use it
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // In development, default to localhost:8080
+  if (isDevelopment) {
+    return 'http://localhost:8080';
+  }
+  
+  // In production, fallback to Railway production URL
+  return 'https://apibackend-production-696e.up.railway.app';
+};
+
+const BACKEND_URL = getBackendUrl();
 
 /**
  * Helper function to build headers for proxied requests
@@ -42,6 +68,11 @@ async function proxyRequest(
     // Add /api prefix back when forwarding to backend
     const url = `${BACKEND_URL}/api/${path}${searchParams ? `?${searchParams}` : ''}`;
 
+    // Log the proxied URL in development for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[API Proxy] ${method} ${url}`);
+    }
+
     const headers = buildProxyHeaders(request);
 
     const response = await fetch(url, {
@@ -66,9 +97,34 @@ async function proxyRequest(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Proxy error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[API Proxy] Error proxying request:', {
+      url: `${BACKEND_URL}/api/${params.path.join('/')}`,
+      method,
+      error: errorMessage,
+      backendUrl: BACKEND_URL,
+    });
+    
+    // Provide more helpful error message
+    const isConnectionError = errorMessage.includes('fetch failed') || 
+                             errorMessage.includes('ECONNREFUSED') ||
+                             errorMessage.includes('ENOTFOUND');
+    
+    if (isConnectionError && BACKEND_URL.includes('localhost')) {
+      return NextResponse.json(
+        { 
+          error: 'Failed to connect to backend. Make sure the backend server is running on http://localhost:8080',
+          details: errorMessage
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to proxy request to backend' },
+      { 
+        error: 'Failed to proxy request to backend',
+        details: errorMessage
+      },
       { status: 500 }
     );
   }

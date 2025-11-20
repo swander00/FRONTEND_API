@@ -19,7 +19,7 @@ export class HttpClient {
   constructor(config: HttpClientConfig) {
     this.config = {
       baseUrl: config.baseUrl.replace(/\/$/, ''), // Remove trailing slash
-      timeout: config.timeout ?? 30000, // 30 seconds default
+      timeout: config.timeout ?? 60000, // 60 seconds default
       retries: config.retries ?? 0, // No retries by default
       retryDelay: config.retryDelay ?? 1000, // 1 second default
     };
@@ -253,7 +253,7 @@ export class HttpClient {
 export function createHttpClient(baseUrl: string): HttpClient {
   return new HttpClient({
     baseUrl,
-    timeout: 30000,
+    timeout: 60000, // Increased to 60 seconds to handle slow database queries
     retries: 3, // Enable retries for rate limiting (429) and server errors
     retryDelay: 1000, // Base delay of 1 second, will use exponential backoff
   });

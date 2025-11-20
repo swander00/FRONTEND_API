@@ -45,6 +45,29 @@ export function useUserPreferences() {
     };
   }, [isAuthenticated]);
 
+  const refetch = useCallback(async () => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const data = await getUserPreferences();
+      if (!cancelled) {
+        setPreferences(data);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      if (!cancelled) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch preferences'));
+        setIsLoading(false);
+      }
+    }
+  }, [isAuthenticated]);
+
   const updatePreferences = useCallback(async (updates: Parameters<typeof updateUserPreferences>[0]) => {
     setIsUpdating(true);
     setError(null);
@@ -76,6 +99,7 @@ export function useUserPreferences() {
     error,
     updatePreferences,
     isUpdating,
+    refetch,
   };
 }
 

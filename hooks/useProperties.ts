@@ -295,8 +295,25 @@ export function useProperties(options: UsePropertiesOptions = {}) {
         setTotalPages(totalPagesNum || Math.ceil(totalCount / pageSizeNum));
       })
       .catch((err) => {
-        console.error('Error fetching properties:', err);
-        setError(err instanceof Error ? err : new Error('Failed to fetch properties'));
+        // Enhanced error logging
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        const errorDetails = err instanceof Error ? {
+          message: err.message,
+          stack: err.stack,
+          name: err.name,
+          ...(err as any).status && { status: (err as any).status },
+          ...(err as any).statusText && { statusText: (err as any).statusText },
+          ...(err as any).details && { details: (err as any).details },
+        } : err;
+        
+        console.error('Error fetching properties:', {
+          error: errorMessage,
+          details: errorDetails,
+          url: `${API_ENDPOINTS.properties}?${queryString}`,
+          filters: filters ? JSON.stringify(filters, null, 2) : 'null',
+        });
+        
+        setError(err instanceof Error ? err : new Error(`Failed to fetch properties: ${errorMessage}`));
         setProperties([]);
       })
       .finally(() => {
