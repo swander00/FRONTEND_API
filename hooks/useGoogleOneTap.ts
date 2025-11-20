@@ -19,6 +19,7 @@ declare global {
             auto_select?: boolean;
             cancel_on_tap_outside?: boolean;
             itp_support?: boolean;
+            use_fedcm_for_prompt?: boolean;
           }) => void;
           prompt: (momentNotification?: (notification: { getNotDisplayedReason: () => string; getSkippedReason: () => string; getDismissedReason: () => string }) => void) => void;
           disableAutoSelect: () => void;
@@ -44,49 +45,72 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
 
   const handleCredentialResponse = useCallback(async (response: { credential: string }) => {
     const supabase = getSupabaseBrowserClient();
-    if (!supabase) return;
+    if (!supabase) {
+      console.error('Supabase client not available');
+      return;
+    }
+
+    // Disable One Tap to prevent conflicts during OAuth flow
+    if (window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.disableAutoSelect();
+      } catch (err) {
+        // Ignore errors
+      }
+    }
 
     try {
-      // Exchange the Google ID token for a Supabase session
-      // Supabase supports signInWithIdToken for OAuth providers
-      const { data, error } = await supabase.auth.signInWithIdToken({
-        provider: 'google',
-        token: response.credential,
-      });
-
-      if (error) {
-        console.error('Google One Tap sign-in error:', error);
-        // If signInWithIdToken doesn't work, fallback to OAuth flow
-        // This might happen if Supabase version doesn't support it
-        if (error.message?.includes('not supported') || error.message?.includes('invalid')) {
-          // Fallback: redirect to OAuth
-          await supabase.auth.signInWithOAuth({
+      // Try signInWithIdToken first if available (Supabase v2.38+)
+      if (typeof supabase.auth.signInWithIdToken === 'function') {
+        try {
+          const { data, error } = await supabase.auth.signInWithIdToken({
             provider: 'google',
-            options: {
-              redirectTo: `${window.location.origin}/auth/callback`,
-            },
+            token: response.credential,
           });
+
+          if (!error && data?.session) {
+            // Success - auth state change will be handled by useAuth hook
+            console.log('Google One Tap sign-in successful via signInWithIdToken');
+            return;
+          }
+
+          // If error, log and fall through to OAuth
+          console.warn('signInWithIdToken failed, using OAuth flow:', error?.message);
+        } catch (idTokenErr) {
+          console.warn('signInWithIdToken error, using OAuth flow:', idTokenErr);
         }
-        return;
       }
 
-      // Auth state change will be handled by useAuth hook
-      console.log('Google One Tap sign-in successful');
+      // Use standard OAuth flow (most reliable method)
+      // This will redirect to Google OAuth and then back to /auth/callback
+      const { error: oauthError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: false, // Ensure redirect happens
+        },
+      });
+
+      if (oauthError) {
+        console.error('OAuth sign-in failed:', oauthError);
+        // Don't show alert here as OAuth will redirect
+        // If we reach here, something is wrong with the configuration
+      }
     } catch (err) {
-      console.error('Failed to sign in with Google One Tap:', err);
-      // Fallback to OAuth if One Tap fails
+      console.error('Failed to process Google One Tap credential:', err);
+      // Try OAuth as final fallback
       try {
-        const supabase = getSupabaseBrowserClient();
-        if (supabase) {
-          await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              redirectTo: `${window.location.origin}/auth/callback`,
-            },
-          });
+        const { error: oauthError } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback`,
+          },
+        });
+        if (oauthError) {
+          console.error('OAuth fallback also failed:', oauthError);
         }
       } catch (fallbackErr) {
-        console.error('Fallback OAuth also failed:', fallbackErr);
+        console.error('All authentication methods failed:', fallbackErr);
       }
     }
   }, []);
@@ -165,6 +189,7 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
           auto_select: autoSelect,
           cancel_on_tap_outside: cancelOnTapOutside,
           itp_support: true, // Intelligent Tracking Prevention support
+          use_fedcm_for_prompt: true, // Use FedCM API for better compatibility
         });
 
         // Prompt One Tap
