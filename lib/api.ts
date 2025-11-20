@@ -52,17 +52,42 @@ export async function apiGet<T>(endpoint: string, params?: Record<string, string
 
 /**
  * @deprecated Use api.properties.list() with filters instead
+ * 
+ * IMPORTANT: This function preserves multiple values for duplicate query parameters
+ * (e.g., ?city=Brampton&city=Caledon) by converting them to arrays.
+ * This is critical for multi-select filters.
  */
 export async function apiGetWithQueryString<T>(endpoint: string, queryString: string): Promise<T> {
-  // Parse query string to params object
-  const params: Record<string, string | number | boolean> = {};
+  // Parse query string to params object, preserving multiple values as arrays
+  // This is critical for multi-select filters like city and propertyType
+  const params: Record<string, string | number | boolean | string[]> = {};
+  
+  // Use URLSearchParams to parse, but collect ALL values for each key
+  // URLSearchParams.getAll() returns all values for a key, not just the last one
   const searchParams = new URLSearchParams(queryString);
-  searchParams.forEach((value, key) => {
-    // Try to parse as number or boolean
-    if (value === 'true') params[key] = true;
-    else if (value === 'false') params[key] = false;
-    else if (!isNaN(Number(value))) params[key] = Number(value);
-    else params[key] = value;
+  
+  // Get all unique keys first
+  const keys = new Set<string>();
+  searchParams.forEach((_, key) => keys.add(key));
+  
+  // For each key, get all values
+  keys.forEach((key) => {
+    const values = searchParams.getAll(key);
+    
+    // For multi-select filters (city, propertyType), always keep as array
+    if (key === 'city' || key === 'propertyType') {
+      params[key] = values;
+    } else if (values.length === 1) {
+      // Single value - try to parse as number or boolean
+      const value = values[0];
+      if (value === 'true') params[key] = true;
+      else if (value === 'false') params[key] = false;
+      else if (!isNaN(Number(value)) && value !== '') params[key] = Number(value);
+      else params[key] = value;
+    } else {
+      // Multiple values for non-array param - keep as array
+      params[key] = values;
+    }
   });
 
   return apiGet<T>(endpoint, params);
