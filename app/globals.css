@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Swiper styles */
+@import 'swiper/css';
+@import 'swiper/css/pagination';
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 255, 255, 255;
@@ -22,5 +26,228 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* Home page component styles */
+.flat-slider {
+  @apply relative min-h-[600px] flex items-center justify-center bg-gradient-to-br from-slate-800 via-slate-700 to-blue-800;
+}
+
+.flat-slider .overlay {
+  @apply absolute inset-0 bg-black/30;
+}
+
+.flat-section {
+  @apply py-16 px-4;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.row {
+  @apply flex flex-wrap -mx-4;
+}
+
+.col-lg-12 {
+  @apply w-full px-4;
+}
+
+.box-title {
+  @apply mb-12;
+}
+
+.text-subtitle {
+  @apply text-sm font-semibold uppercase tracking-wider;
+}
+
+.text-primary {
+  @apply text-blue-600;
+}
+
+.title {
+  @apply text-3xl md:text-4xl font-bold text-gray-900;
+}
+
+.title-large {
+  @apply text-4xl md:text-5xl lg:text-6xl font-bold;
+}
+
+.homelengo-box {
+  @apply bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105;
+}
+
+.archive-top {
+  @apply relative;
+}
+
+.archive-bottom {
+  @apply p-4;
+}
+
+.images-group {
+  @apply block relative;
+}
+
+.images-style {
+  @apply relative w-full h-64 overflow-hidden;
+}
+
+.flag-tag {
+  @apply px-2 py-1 text-xs font-semibold rounded;
+}
+
+.flag-tag.primary {
+  @apply bg-blue-600 text-white;
+}
+
+.flag-tag.style-1 {
+  @apply bg-green-600 text-white;
+}
+
+.meta-list {
+  @apply flex gap-4 text-sm text-gray-600;
+}
+
+.meta-list .item {
+  @apply flex items-center gap-1;
+}
+
+.price {
+  @apply text-xl font-bold text-gray-900;
+}
+
+.tf-btn {
+  @apply inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors;
+}
+
+.btn-view {
+  @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+
+.box-service {
+  @apply bg-white rounded-lg shadow-md p-6 text-center;
+}
+
+.box-service .image {
+  @apply mb-4 flex justify-center;
+}
+
+.box-service .content h5 {
+  @apply text-xl font-bold mb-2 text-gray-900;
+}
+
+.box-service .content p {
+  @apply text-gray-600 mb-4;
+}
+
+.btn-line {
+  @apply border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white;
+}
+
+.flat-blog-item {
+  @apply block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow;
+}
+
+.img-style {
+  @apply relative w-full h-48 overflow-hidden;
+}
+
+.date-post {
+  @apply absolute top-4 left-4 bg-white px-3 py-1 rounded text-sm font-semibold;
+}
+
+.content-box {
+  @apply p-4;
+}
+
+.post-author {
+  @apply flex gap-2 text-xs text-gray-500 mb-2;
+}
+
+.bg-primary-new {
+  @apply bg-gray-50;
+}
+
+/* Animated House Component Styles */
+@keyframes houseFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes windowShimmer {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes houseGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.5));
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceGentle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.house-float {
+  animation: houseFloat 3s ease-in-out infinite;
+}
+
+.window-shimmer {
+  animation: windowShimmer 2s ease-in-out infinite;
+}
+
+.house-glow {
+  animation: houseGlow 3s ease-in-out infinite;
+}
+
+.slide-in {
+  animation: slideIn 0.6s ease-out forwards;
+}
+
+.bounce-gentle {
+  animation: bounceGentle 2s ease-in-out infinite;
 }
 

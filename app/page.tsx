@@ -1,6 +1,16 @@
-import { redirect } from 'next/navigation';
+import { Hero, FeaturedProperties, CityLocations, OurServices, HowItWorks, Testimonials, CTA } from '@/components/home';
 
 export default function Home() {
-  redirect('/search');
+  return (
+    <>
+      <Hero />
+      <FeaturedProperties />
+      <CityLocations />
+      <OurServices />
+      <HowItWorks />
+      <Testimonials />
+      <CTA />
+    </>
+  );
 }
 

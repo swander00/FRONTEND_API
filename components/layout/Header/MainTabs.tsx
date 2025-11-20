@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-type MainTabKey = 'search' | 'home-evaluation';
+type MainTabKey = 'home' | 'search' | 'home-evaluation';
 
 type MainTabsProps = {
   activeTab?: MainTabKey;
@@ -8,6 +8,7 @@ type MainTabsProps = {
 };
 
 const tabs: Array<{ key: MainTabKey; label: string; href: string }> = [
+  { key: 'home', label: 'Home', href: '/' },
   { key: 'search', label: 'Search Homes', href: '/search' },
   {
     key: 'home-evaluation',

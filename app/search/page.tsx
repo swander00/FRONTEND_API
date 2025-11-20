@@ -444,7 +444,17 @@ function SearchPageContent() {
     const savedFilters = sessionStorage.getItem('savedSearchFilters');
     if (savedFilters) {
       try {
-        const filters = JSON.parse(savedFilters) as FiltersState;
+        const partialFilters = JSON.parse(savedFilters) as Partial<FiltersState>;
+        // Merge with defaults to ensure complete FiltersState
+        const filters: FiltersState = {
+          ...DEFAULT_FILTERS_STATE,
+          ...partialFilters,
+          // Deep merge advanced filters
+          advanced: {
+            ...DEFAULT_FILTERS_STATE.advanced,
+            ...(partialFilters.advanced || {}),
+          },
+        };
         setFiltersSnapshot(filters);
         sessionStorage.removeItem('savedSearchFilters');
         // Update URL status if needed

@@ -3,7 +3,7 @@ import { MainTabs } from './MainTabs';
 import { HeaderActions } from './HeaderActions';
 
 type NavbarProps = {
-  activeTab?: 'search' | 'home-evaluation';
+  activeTab?: 'home' | 'search' | 'home-evaluation';
 };
 
 export function Navbar({ activeTab = 'search' }: NavbarProps) {
