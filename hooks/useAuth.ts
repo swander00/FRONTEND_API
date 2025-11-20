@@ -152,13 +152,30 @@ export function useAuth() {
       throw new Error('Supabase client not initialized');
     }
 
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    
-    // Reset authenticated client to clear any cached tokens
-    resetAuthenticatedClient();
-    
-    setState({ status: 'unauthenticated' });
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Reset authenticated client to clear any cached tokens
+      resetAuthenticatedClient();
+      
+      // Clear Google One Tap state if available
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        try {
+          // Disable auto-select to prevent One Tap from showing immediately after sign out
+          window.google.accounts.id.disableAutoSelect();
+          // Cancel any pending One Tap prompts
+          window.google.accounts.id.cancel();
+        } catch (err) {
+          console.debug('Error clearing Google One Tap state:', err);
+        }
+      }
+      
+      setState({ status: 'unauthenticated' });
+    } catch (err) {
+      console.error('Sign out error:', err);
+      throw err;
+    }
   }, [supabase]);
 
   const refreshProfile = useCallback(async () => {

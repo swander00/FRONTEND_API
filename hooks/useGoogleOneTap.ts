@@ -23,6 +23,7 @@ declare global {
           }) => void;
           prompt: (momentNotification?: (notification: { getNotDisplayedReason: () => string; getSkippedReason: () => string; getDismissedReason: () => string }) => void) => void;
           disableAutoSelect: () => void;
+          cancel: () => void;
           storeCredential: (credentials: { id: string; password: string }, callback: () => void) => void;
         };
       };
@@ -237,9 +238,14 @@ export function useGoogleOneTap(options: UseGoogleOneTapOptions = {}) {
       // Disable One Tap when user is authenticated
       try {
         window.google.accounts.id.disableAutoSelect();
+        window.google.accounts.id.cancel();
       } catch (err) {
         // Ignore errors
       }
+    } else if (!isAuthenticated && initializedRef.current && window.google?.accounts?.id) {
+      // Re-enable One Tap when user signs out (reset initialization state)
+      // This allows One Tap to show again after sign out
+      initializedRef.current = false;
     }
   }, [isAuthenticated]);
 }

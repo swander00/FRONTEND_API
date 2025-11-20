@@ -106,7 +106,35 @@ export function AuthTriggerButton({
     if (!supabase) {
       return;
     }
-    await supabase.auth.signOut();
+    
+    try {
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+        // Still continue with cleanup even if there's an error
+      }
+      
+      // Clear Google One Tap state if available
+      if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+        try {
+          // Disable auto-select to prevent One Tap from showing immediately
+          window.google.accounts.id.disableAutoSelect();
+          // Clear any stored credentials
+          window.google.accounts.id.cancel();
+        } catch (err) {
+          console.debug('Error clearing Google One Tap state:', err);
+        }
+      }
+      
+      // Redirect to home page after sign out
+      // The auth state change listener will handle UI updates
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+    } catch (err) {
+      console.error('Failed to sign out:', err);
+    }
   }, [supabase]);
 
   const user = session?.user ?? null;

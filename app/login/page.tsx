@@ -32,7 +32,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <h1 className="text-3xl font-bold text-center mb-2">Welcome to PropertyHub</h1>
-        <p className="text-gray-600 text-center mb-8">Sign in to continue</p>
+        <p className="text-gray-600 text-center mb-8">Sign in or create an account to continue</p>
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
@@ -76,7 +76,11 @@ export default function LoginPage() {
         </button>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          By signing in, you agree to our Terms of Service and Privacy Policy
+          By continuing, you agree to our Terms of Service and Privacy Policy.
+          <br />
+          <span className="text-xs text-gray-400 mt-1 block">
+            New to PropertyHub? Signing in with Google will create your account automatically.
+          </span>
         </p>
       </div>
     </div>
