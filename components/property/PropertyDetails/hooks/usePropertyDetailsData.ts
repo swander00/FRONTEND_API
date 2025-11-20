@@ -25,13 +25,23 @@ export function usePropertyDetailsData(rawProperty?: Property, options?: UseProp
           if (!url || typeof url !== 'string' || url.trim() === '') {
             return null;
           }
+          // Ensure id is always a number
+          let id: number;
+          if (typeof m.id === 'number') {
+            id = m.id;
+          } else if (typeof m.MediaKey === 'number') {
+            id = m.MediaKey;
+          } else {
+            // Use index + 1 as fallback (ensures it's always a number)
+            id = index + 1;
+          }
           return {
-            id: m.id || m.MediaKey || `media-${index + 1}`,
+            id,
             url: url.trim(),
             alt: m.alt || m.caption || m.ShortDescription || `${property?.StreetAddress ?? "Property"} - Image ${index + 1}`,
           };
         })
-        .filter((img: any): img is { id: string | number; url: string; alt: string } => img !== null && img.url);
+        .filter((img: any): img is { id: number; url: string; alt: string } => img !== null && img.url);
       
       if (mediaImages.length > 0) {
         return mediaImages;

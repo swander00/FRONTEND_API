@@ -43,7 +43,7 @@ import { PropertyLocationMap } from '../shared';
 import { usePropertyDetailsData } from '../hooks/usePropertyDetailsData';
 import type { SpecItem } from '../helpers';
 import type { RoomInfo } from '../hooks/useRoomDetails';
-import { api } from '@/lib/api/index';
+import { api } from '@/lib/api';
 
 interface PropertyDetailsModalMobileProps {
   isOpen: boolean;

@@ -17,7 +17,7 @@ import {
   AgentContactCard,
 } from '@/components/property/PropertyDetails/shared';
 import { usePropertyDetailsData } from '@/components/property/PropertyDetails/hooks/usePropertyDetailsData';
-import { api, type PropertyDetailsResponse, type PropertyMediaItem } from '@/lib/api/index';
+import { api, type PropertyDetailsResponse, type PropertyMediaItem } from '@/lib/api';
 import type { PropertyDetailsData } from '@/components/property/PropertyDetails/normalizeProperty';
 import { PageContainer } from '@/components/layout';
 
