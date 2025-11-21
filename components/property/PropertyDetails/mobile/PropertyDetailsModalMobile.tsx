@@ -303,7 +303,7 @@ export default function PropertyDetailsModalMobile({
         <button
           type="button"
           onClick={handleExpand}
-          className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg"
+          className="h-11 w-11 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full shadow-lg transition-colors hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           aria-label="Open in full page"
           title="Open in full page"
         >
@@ -311,7 +311,7 @@ export default function PropertyDetailsModalMobile({
         </button>
         <button
           onClick={onClose}
-          className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg"
+          className="h-11 w-11 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-full shadow-lg transition-colors hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           aria-label="Close"
         >
           <X className="w-5 h-5 text-gray-700" />
@@ -346,23 +346,24 @@ export default function PropertyDetailsModalMobile({
           </div>
 
           {/* Action Buttons - Top Right (with spacing for close button) */}
-          <div className="absolute top-2 right-14 flex items-center gap-2">
+          <div className="absolute top-2 right-16 flex items-center gap-2">
             <PropertySaveButton 
               property={resolvedProperty}
               variant="card"
-              size="md"
+              size="lg"
             />
             <PropertyLikeButton 
               property={resolvedProperty}
               variant="card"
-              size="md"
+              size="lg"
             />
           </div>
           
           {/* Left Arrow */}
           <button
             onClick={goToPrevious}
-            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 backdrop-blur-sm rounded-full text-white"
+            className="absolute left-2 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-full text-white transition-colors hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            aria-label="Previous image"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -370,7 +371,8 @@ export default function PropertyDetailsModalMobile({
           {/* Right Arrow */}
           <button
             onClick={goToNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 backdrop-blur-sm rounded-full text-white"
+            className="absolute right-16 top-1/2 -translate-y-1/2 h-11 w-11 flex items-center justify-center bg-black/50 backdrop-blur-sm rounded-full text-white transition-colors hover:bg-black/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            aria-label="Next image"
           >
             <ChevronRight className="w-5 h-5" />
           </button>

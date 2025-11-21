@@ -113,7 +113,7 @@ export function PriceModal({ isOpen, onClose }: PriceModalProps) {
           <button
             type="button"
             onClick={handleEnableAll}
-            className={`rounded-full px-4 py-1.5 text-[11px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white ${
               isAllPrices
                 ? 'bg-blue-600 text-white shadow-sm focus-visible:ring-blue-400'
                 : 'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-900 focus-visible:ring-slate-200'

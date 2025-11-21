@@ -13,9 +13,9 @@ type CircularActionButtonProps = {
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 const SIZE_STYLES = {
-  sm: "p-2 text-xs",
-  md: "p-2.5 text-sm",
-  lg: "p-3 text-base",
+  sm: "h-9 w-9 p-2 text-xs", // 36px minimum
+  md: "h-10 w-10 p-2.5 text-sm", // 40px minimum
+  lg: "h-11 w-11 p-3 text-base", // 44px minimum
 };
 
 const VARIANT_STYLES = {

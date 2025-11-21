@@ -23,7 +23,7 @@ export function MainTabs({ activeTab = 'search', className = '' }: MainTabsProps
 
   return (
     <nav
-      className={`flex flex-nowrap items-center gap-2 overflow-x-auto rounded-full bg-white/80 p-1 shadow-inner shadow-blue-50/40 backdrop-blur-sm sm:gap-3 ${className}`}
+      className={`flex flex-nowrap items-center gap-2 overflow-x-auto rounded-full bg-white/80 p-1 shadow-inner shadow-blue-50/40 backdrop-blur-sm sm:gap-3 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${className}`}
     >
       {tabs.map((tab) => (
         <Link

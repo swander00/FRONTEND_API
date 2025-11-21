@@ -366,7 +366,7 @@ export const AdvancedButton = forwardRef<HTMLButtonElement, AdvancedButtonProps>
         </span>
         <span className="leading-tight">{label}</span>
         {showBadge ? (
-          <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-2 text-[11px] font-semibold text-white shadow-md shadow-blue-500/40">
+          <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-700 px-2 text-xs font-semibold text-white shadow-md shadow-blue-500/40">
             {badgeCount}
           </span>
         ) : null}

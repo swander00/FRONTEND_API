@@ -20,6 +20,7 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  overflow-x: hidden; /* Prevent horizontal scrolling on mobile */
 }
 
 @layer utilities {

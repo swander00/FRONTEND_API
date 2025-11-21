@@ -93,7 +93,7 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
         type="button"
         onClick={handleSelect}
         className={cn(
-          'group flex w-full min-w-[380px] items-center gap-4 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-left transition hover:border-emerald-200 hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400',
+          'group flex w-full min-w-0 sm:min-w-[380px] items-center gap-4 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-left transition hover:border-emerald-200 hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400',
           suggestion.isActive && 'border-emerald-300 bg-white shadow-md'
         )}
       >
@@ -243,7 +243,7 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
       type="button"
       onClick={handleSelect}
       className={cn(
-        'group flex w-full min-w-[420px] items-stretch gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-white hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1',
+        'group flex w-full min-w-0 sm:min-w-[420px] items-stretch gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-white hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1',
         'dark:border-slate-700 dark:bg-slate-900/80 dark:hover:border-emerald-500/60 dark:hover:bg-slate-900',
         isActive && 'border-emerald-300 bg-white shadow-md'
       )}
@@ -267,7 +267,7 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
         {mlsStatusBadge && (
           <span
             className={cn(
-              'absolute left-2.5 top-2.5 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide shadow-sm backdrop-blur-sm',
+              'absolute left-2.5 top-2.5 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide shadow-sm backdrop-blur-sm',
               getStatusClasses(mlsStatusBadge.variant)
             )}
           >

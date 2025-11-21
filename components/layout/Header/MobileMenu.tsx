@@ -102,7 +102,7 @@ export function MobileMenu({ activeTab = 'search' }: MobileMenuProps) {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-label="Close menu"
             >
               <svg
