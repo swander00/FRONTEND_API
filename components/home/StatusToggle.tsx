@@ -1,20 +1,52 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import { STATUS_OPTIONS } from '@/lib/filters/options';
 
-export type StatusValue = 'For Sale' | 'For Rent' | 'Sold' | 'Leased' | 'Removed';
+export type StatusValue = 'For Sale' | 'For Lease' | 'Sold' | 'Leased' | 'Removed';
 
 export interface StatusToggleProps {
   value: StatusValue;
   onChange: (status: StatusValue) => void;
 }
 
-const STATUSES: Array<{ label: string; value: StatusValue }> = [
-  { label: 'For Sale', value: 'For Sale' },
-  { label: 'For Rent', value: 'For Rent' },
-  { label: 'Sold', value: 'Sold' },
-  { label: 'Leased', value: 'Leased' },
-  { label: 'Removed', value: 'Removed' },
+// Enhanced status configuration with solid colors
+const STATUSES: Array<{ 
+  label: string; 
+  value: StatusValue; 
+  activeBg: string;
+  activeText: string;
+}> = [
+  { 
+    label: 'For Sale', 
+    value: 'For Sale', 
+    activeBg: 'bg-blue-600',
+    activeText: 'text-white',
+  },
+  { 
+    label: 'For Lease', 
+    value: 'For Lease', 
+    activeBg: 'bg-purple-600',
+    activeText: 'text-white',
+  },
+  { 
+    label: 'Sold', 
+    value: 'Sold', 
+    activeBg: 'bg-green-600',
+    activeText: 'text-white',
+  },
+  { 
+    label: 'Leased', 
+    value: 'Leased', 
+    activeBg: 'bg-orange-600',
+    activeText: 'text-white',
+  },
+  { 
+    label: 'Removed', 
+    value: 'Removed', 
+    activeBg: 'bg-slate-600',
+    activeText: 'text-white',
+  },
 ];
 
 export function StatusToggle({ value, onChange }: StatusToggleProps) {
@@ -51,10 +83,10 @@ export function StatusToggle({ value, onChange }: StatusToggleProps) {
 
   return (
     <div className="w-full max-w-5xl mx-auto">
-      {/* Glassmorphism container with full width matching search bar */}
+      {/* Solid container with minimal transparency */}
       <div
         ref={containerRef}
-        className="flex gap-2 bg-white/20 backdrop-blur-xl rounded-[24px] shadow-lg shadow-black/10 px-4 py-2 border border-white/30 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="flex gap-2 overflow-x-auto p-1 rounded-xl bg-slate-900/70 border border-slate-700/50 shadow-lg justify-between [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         role="group"
         aria-label="Property status filter"
       >
@@ -69,23 +101,27 @@ export function StatusToggle({ value, onChange }: StatusToggleProps) {
               onClick={() => onChange(status.value)}
               className={`
                 flex-1
-                px-4 py-2.5
+                px-4 py-3
                 text-sm font-semibold
-                rounded-full
-                transition-all duration-200 ease-in-out
-                focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:z-10
+                rounded-lg
+                transition-all duration-200 ease-out
+                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-blue-400
                 whitespace-nowrap
                 relative
+                text-center
                 ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 scale-105 z-10'
-                    : 'bg-transparent text-gray-300 border border-white/30 hover:text-white hover:border-white/50'
+                    ? `${status.activeBg} ${status.activeText} shadow-md`
+                    : `bg-slate-800/60 text-gray-300 hover:bg-slate-700/70 hover:text-white`
                 }
               `}
               aria-pressed={isActive}
               aria-label={`Filter by ${status.label}`}
             >
-              <span className="relative z-10">{status.label}</span>
+              {/* Text with better contrast */}
+              <span className="relative z-10">
+                {status.label}
+              </span>
             </button>
           );
         })}

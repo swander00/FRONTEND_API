@@ -1,0 +1,2 @@
+export { HeroSearchBar } from './HeroSearchBar';
+

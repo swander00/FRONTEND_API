@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiGet, API_ENDPOINTS } from '@/lib/api';
 import type { Property } from '@/types/property';
+import type { SearchResponse as ApiSearchResponse, PropertySuggestionResponse } from '@/lib/api/types';
+import { formatCurrency } from '@/lib/formatters';
 
 interface SearchResponse {
   properties?: Property[];
@@ -17,6 +19,17 @@ interface SearchResponse {
     price?: number;
     priceFormatted?: string;
     mlsNumber?: string;
+    mlsStatus?: string;
+    status?: string;
+    originalEntryTimestamp?: string;
+    statusDates?: {
+      purchaseContractDate?: string;
+      suspendedDate?: string;
+      terminatedDate?: string;
+      expirationDate?: string;
+      withdrawnDate?: string;
+      unavailableDate?: string;
+    };
     beds?: number;
     additionalBeds?: number;
     baths?: number;
@@ -26,6 +39,41 @@ interface SearchResponse {
   }>;
   total?: number;
 }
+
+// Transform PropertySuggestionResponse to suggestion format
+const transformListingToSuggestion = (listing: PropertySuggestionResponse) => {
+  const locationLine = listing.city && listing.stateOrProvince
+    ? `${listing.city}, ${listing.stateOrProvince}`
+    : undefined;
+
+  const sqftRange = listing.livingAreaMin && listing.livingAreaMax
+    ? `${listing.livingAreaMin.toLocaleString()} – ${listing.livingAreaMax.toLocaleString()} sq.ft.`
+    : listing.livingAreaMin
+    ? `${listing.livingAreaMin.toLocaleString()}+ sq.ft.`
+    : listing.livingAreaMax
+    ? `Up to ${listing.livingAreaMax.toLocaleString()} sq.ft.`
+    : undefined;
+
+  return {
+    id: listing.listingKey,
+    type: 'listing' as const,
+    addressLine: listing.fullAddress,
+    locationLine,
+    price: listing.listPrice,
+    priceFormatted: formatCurrency(listing.listPrice),
+    mlsNumber: listing.mlsNumber,
+    mlsStatus: listing.mlsStatus,
+    status: listing.status,
+    originalEntryTimestamp: listing.originalEntryTimestamp,
+    statusDates: listing.statusDates,
+    beds: listing.bedroomsAboveGrade,
+    additionalBeds: listing.bedroomsBelowGrade,
+    baths: listing.bathroomsTotalInteger,
+    sqftRange,
+    propertySubType: listing.propertySubType,
+    thumbnailUrl: listing.primaryImageUrl,
+  };
+};
 
 interface UsePropertySearchOptions {
   query?: string;
@@ -52,18 +100,31 @@ export function usePropertySearch(options: UsePropertySearchOptions = {}) {
     setError(null);
 
     try {
-      const data = await apiGet<SearchResponse>(API_ENDPOINTS.search, {
+      const data = await apiGet<ApiSearchResponse>(API_ENDPOINTS.search, {
         q: searchQuery,
         limit,
       });
 
-      if (data.properties) {
-        setResults(data.properties);
+      console.log('[usePropertySearch] API response:', { 
+        listingsCount: data.listings?.length || 0, 
+        listings: data.listings,
+        meta: data.meta 
+      });
+
+      // Transform listings from API to suggestions format
+      if (data.listings && data.listings.length > 0) {
+        const transformedSuggestions = data.listings.map(transformListingToSuggestion);
+        console.log('[usePropertySearch] Transformed suggestions:', transformedSuggestions);
+        setSuggestions(transformedSuggestions);
+      } else {
+        console.log('[usePropertySearch] No listings found, clearing suggestions');
+        setSuggestions([]);
       }
-      if (data.suggestions) {
-        setSuggestions(data.suggestions);
-      }
-      setTotal(data.total || 0);
+      
+      // For now, we don't set results from search endpoint (it's for suggestions only)
+      // Results would come from the properties endpoint
+      setResults([]);
+      setTotal(data.meta?.totalCount || 0);
     } catch (err) {
       console.error('Error searching properties:', err);
       setError(err instanceof Error ? err : new Error('Failed to search properties'));

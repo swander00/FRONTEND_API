@@ -17,6 +17,7 @@ type SearchBarProps = {
   inputClassName?: string;
   onSearch?: (value: string) => void;
   onListingSelect?: (property: Property) => void;
+  onSuggestionSelect?: (suggestion: SearchSuggestion) => void;
 };
 
 type PreparedSuggestion = {
@@ -315,6 +316,7 @@ export function SearchBar({
   inputClassName,
   onSearch,
   onListingSelect,
+  onSuggestionSelect,
 }: SearchBarProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -366,9 +368,19 @@ export function SearchBar({
     // Use API suggestions if available, otherwise convert properties to suggestions
     let apiSearchSuggestions: SearchSuggestion[] = [];
     
+    console.log('[SearchBar] Combining suggestions:', {
+      trimmedValue,
+      apiSuggestionsCount: apiSuggestions?.length || 0,
+      apiSuggestions,
+      apiResultsCount: apiResults?.length || 0,
+      localSuggestionsCount: localSuggestions.length,
+    });
+    
     if (apiSuggestions && apiSuggestions.length > 0) {
-      // Use suggestions directly from API
-      apiSearchSuggestions = apiSuggestions.map(apiSuggestionToSearchSuggestion);
+      // Suggestions from usePropertySearch are already SearchSuggestion objects
+      // API only returns listing suggestions, so we can safely cast them
+      apiSearchSuggestions = apiSuggestions.filter(s => s.type === 'listing') as SearchSuggestion[];
+      console.log('[SearchBar] Using API suggestions directly:', apiSearchSuggestions);
     } else if (apiResults && apiResults.length > 0) {
       // Convert properties to suggestions if API returns properties instead
       apiSearchSuggestions = apiResults.map((property) => {
@@ -378,7 +390,9 @@ export function SearchBar({
     }
     
     // Prioritize: cities first, then API suggestions
-    return [...localSuggestions, ...apiSearchSuggestions].slice(0, 7);
+    const combined = [...localSuggestions, ...apiSearchSuggestions].slice(0, 7);
+    console.log('[SearchBar] Final combined suggestions:', combined);
+    return combined;
   }, [trimmedValue, apiSuggestions, apiResults]);
 
   const shouldShowDropdown = isFocused && trimmedValue.length > 0;
@@ -405,6 +419,14 @@ export function SearchBar({
 
   const handleSuggestionSelect = useCallback(
     (suggestion: SearchSuggestion) => {
+      // Call custom suggestion handler if provided
+      if (onSuggestionSelect) {
+        onSuggestionSelect(suggestion);
+        cancelBlurTimeout();
+        setIsFocused(false);
+        return;
+      }
+
       let nextValue: string;
       if (suggestion.type === 'listing') {
         // For API suggestions, we need to fetch the property if needed
@@ -431,7 +453,7 @@ export function SearchBar({
       cancelBlurTimeout();
       setIsFocused(false);
     },
-    [cancelBlurTimeout, onChange, onListingSelect, onSearch, apiResults]
+    [cancelBlurTimeout, onChange, onListingSelect, onSearch, onSuggestionSelect, apiResults]
   );
 
   useEffect(() => () => cancelBlurTimeout(), [cancelBlurTimeout]);

@@ -543,7 +543,7 @@ function SearchPageContent() {
                 onChange={setSearchQuery}
                 onSearch={handleSearchSubmit}
                 onListingSelect={handlePropertyClick}
-                className="w-full md:w-[400px]"
+                className="w-full"
                 inputClassName="shadow-sm"
               />
             }

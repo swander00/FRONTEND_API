@@ -102,7 +102,7 @@ function FiltersContainerInner({
     <div className={cn('space-y-5', className)}>
       {primaryHeaderSlot ? (
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
-          <div className="w-full flex-shrink-0 md:w-[400px]">{primaryHeaderSlot}</div>
+          <div className="w-full flex-shrink-0 md:w-[480px]">{primaryHeaderSlot}</div>
           <div className="flex min-w-0 flex-1 items-center gap-4 md:gap-6">
             <div className="min-w-0 flex-1">
               <PrimaryFilters />

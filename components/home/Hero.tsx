@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { MapPin, Home, Search } from 'lucide-react';
-import { HeroSearchBar } from './HeroSearchBar';
+import { HeroSearchBar } from '@/components/HeroSearchBar';
 import { StatusToggle, type StatusValue } from './StatusToggle';
 
 export function Hero() {
@@ -10,9 +10,9 @@ export function Hero() {
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 overflow-hidden">
-      {/* Blurred background image effect */}
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1920')] bg-cover bg-center opacity-15"></div>
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/90 via-slate-800/85 to-indigo-900/90"></div>
+      {/* Background image */}
+      <div className="absolute inset-0 bg-[url('/images/HomeHeroSection.jpg')] bg-cover bg-center"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-800/75 to-indigo-900/80"></div>
 
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -52,7 +52,7 @@ export function Hero() {
 
           {/* Search Bar */}
           <div className="mb-10">
-            <HeroSearchBar />
+            <HeroSearchBar selectedStatus={status} />
           </div>
 
           {/* Stats */}

@@ -232,6 +232,15 @@ body {
   }
 }
 
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .house-float {
   animation: houseFloat 3s ease-in-out infinite;
 }
@@ -250,5 +259,9 @@ body {
 
 .bounce-gentle {
   animation: bounceGentle 2s ease-in-out infinite;
+}
+
+.animate-shine {
+  animation: shine 2s ease-in-out infinite;
 }
 
