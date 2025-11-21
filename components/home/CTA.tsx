@@ -40,7 +40,7 @@ export function CTA() {
 
           {/* Description */}
           <p className="text-xl md:text-2xl text-blue-100 max-w-2xl mx-auto leading-relaxed">
-            Join thousands of Canadians who found their perfect home with PropertyHub. Start your search today!
+            Join thousands of Canadians who found their perfect home with Wander Property. Start your search today!
           </p>
 
           {/* CTA Buttons */}

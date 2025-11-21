@@ -31,7 +31,7 @@ export function BaseModal({
   size = 'md',
   className,
   contentClassName,
-  overlayClassName = 'z-[120]',
+  overlayClassName = 'z-[9998]',
 }: BaseModalProps) {
   const [isMounted, setIsMounted] = useState(false);
 

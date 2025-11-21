@@ -9,7 +9,7 @@ const testimonials = [
     location: 'Toronto, ON',
     image: '👩‍💼',
     rating: 5,
-    text: 'PropertyHub made finding our dream home so easy! The search filters are incredible and we found exactly what we were looking for in just a few days.',
+    text: 'Wander Property made finding our dream home so easy! The search filters are incredible and we found exactly what we were looking for in just a few days.',
   },
   {
     name: 'Michael Chen',
@@ -30,7 +30,7 @@ const testimonials = [
     location: 'Calgary, AB',
     image: '👨‍🔧',
     rating: 5,
-    text: 'As a first-time homebuyer, PropertyHub was incredibly helpful. The detailed property information and easy-to-use interface made the whole process smooth.',
+    text: 'As a first-time homebuyer, Wander Property was incredibly helpful. The detailed property information and easy-to-use interface made the whole process smooth.',
   },
 ];
 

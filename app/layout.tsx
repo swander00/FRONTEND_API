@@ -9,8 +9,8 @@ import { NavbarWrapper } from '@/components/layout/Header/NavbarWrapper';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "PropertyHub's - Canada's #1 Real Estate Platform",
-  description: 'Search for properties in Canada',
+  title: "Wander Property - Find Your Perfect Home",
+  description: 'Search for properties and find your perfect home',
   icons: {
     icon: '/favicon.ico',
   },

@@ -21,6 +21,8 @@ import {
   type AdvancedFiltersState,
 } from './AdvancedFilters';
 import { DEFAULT_FILTERS as ADVANCED_MODAL_DEFAULTS } from './AdvancedFilters/state';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { MobileFiltersModal } from '../MobileFiltersModal';
 
 type ActiveModal =
   | 'status'
@@ -161,6 +163,8 @@ export function PrimaryFilters() {
   const dateButtonRef = useRef<HTMLButtonElement>(null);
   const cityButtonRef = useRef<HTMLButtonElement>(null);
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const segmentedButtonClassName = 'first:rounded-s-full last:rounded-e-full';
   const timeRangeIsActive = useMemo(
     () => filters.timeRange !== DEFAULT_FILTERS_STATE.timeRange,
@@ -326,10 +330,65 @@ export function PrimaryFilters() {
     return 'Any Baths';
   }, [filters.baths]);
 
+  // Count active filters for badge
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (timeRangeIsActive) count++;
+    if (cityIsActive) count++;
+    if (typeIsActive) count++;
+    if (priceIsActive) count++;
+    if (bedsIsActive) count++;
+    if (bathsIsActive) count++;
+    const hasAdvancedFilters = Object.values(filters.advanced).some((value) => {
+      if (Array.isArray(value)) return value.length > 0;
+      if (typeof value === 'object' && value !== null) {
+        return Object.values(value).some((v) => v !== null && v !== undefined && v !== 'Any');
+      }
+      return value !== null && value !== undefined && value !== '' && value !== 'Any';
+    });
+    if (hasAdvancedFilters) count++;
+    return count;
+  }, [timeRangeIsActive, cityIsActive, typeIsActive, priceIsActive, bedsIsActive, bathsIsActive, filters.advanced]);
+
+  // Mobile view: single Filters button
+  if (isMobile) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setIsMobileFiltersOpen(true)}
+          className="group inline-flex h-12 items-center gap-2 rounded-full border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60"
+        >
+          <svg
+            className="h-5 w-5 text-gray-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
+            />
+          </svg>
+          <span>Filters</span>
+          {activeFiltersCount > 0 && (
+            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-2 text-[11px] font-semibold text-white">
+              {activeFiltersCount}
+            </span>
+          )}
+        </button>
+        <MobileFiltersModal isOpen={isMobileFiltersOpen} onClose={() => setIsMobileFiltersOpen(false)} />
+      </>
+    );
+  }
+
+  // Desktop view: all filter buttons
   return (
     <>
-      <div className="flex items-center gap-3 md:gap-4 overflow-x-auto whitespace-nowrap pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        <div className="flex h-12 items-center overflow-hidden rounded-full border border-gray-300 bg-white shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60">
+      <div className="flex min-w-0 items-center gap-3 overflow-x-auto whitespace-nowrap pb-1 md:gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex h-12 flex-shrink-0 items-center overflow-hidden rounded-full border border-gray-300 bg-white shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60">
           <StatusButton
             ref={statusButtonRef}
             label={statusSummary.label}
@@ -347,7 +406,7 @@ export function PrimaryFilters() {
           />
         </div>
 
-        <div className="flex h-12 overflow-hidden rounded-full border border-gray-200/80 bg-white shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60 divide-x divide-gray-300">
+        <div className="flex h-12 flex-shrink-0 overflow-hidden rounded-full border border-gray-200/80 bg-white shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60 divide-x divide-gray-300">
           <CityButton
             ref={cityButtonRef}
             label={cityIsActive ? citySummary : 'City'}
@@ -386,7 +445,9 @@ export function PrimaryFilters() {
           />
         </div>
 
-        <AdvancedButton onClick={() => setActiveModal('advanced')} />
+        <div className="flex-shrink-0">
+          <AdvancedButton onClick={() => setActiveModal('advanced')} />
+        </div>
       </div>
 
       <StatusDropdown

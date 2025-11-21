@@ -112,7 +112,8 @@ export function CityLocations() {
       const counts: Record<string, number> = {};
       
       // Fetch counts for cities in batches to avoid overwhelming the API
-      const batchSize = 3;
+      // Reduced batch size and increased delay to prevent 429 errors
+      const batchSize = 2;
       for (let i = 0; i < ALL_CITIES.length; i += batchSize) {
         if (!isMounted) break;
         
@@ -130,18 +131,28 @@ export function CityLocations() {
               if (isMounted) {
                 counts[city] = total;
               }
-            } catch (error) {
-              console.error(`Error fetching count for ${city}:`, error);
-              if (isMounted) {
-                counts[city] = 0;
+            } catch (error: any) {
+              // Handle 429 rate limit errors gracefully
+              if (error?.status === 429 || error?.message?.includes('429')) {
+                console.warn(`Rate limited for ${city}, using default count`);
+                if (isMounted) {
+                  counts[city] = 0;
+                }
+                // Wait longer before next request if rate limited
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              } else {
+                console.error(`Error fetching count for ${city}:`, error);
+                if (isMounted) {
+                  counts[city] = 0;
+                }
               }
             }
           })
         );
         
-        // Small delay between batches to avoid rate limiting
+        // Increased delay between batches to avoid rate limiting (500ms instead of 100ms)
         if (i + batchSize < ALL_CITIES.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
       

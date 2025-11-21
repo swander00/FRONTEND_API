@@ -263,7 +263,7 @@ export function AuthModal({
       )}
       overlayClassName={cn(
         'transition-opacity duration-200 ease-out',
-        'z-[120]',
+        'z-[9998]',
         isClosing ? 'opacity-0' : 'opacity-100'
       )}
       size="sm"
@@ -278,7 +278,7 @@ export function AuthModal({
             <p className="mt-1 text-sm text-gray-500">
               {mode === 'sign-in'
                 ? 'Sign in to access your saved searches and personalize your experience.'
-                : 'Join PropertyHub to save listings, receive alerts, and more.'}
+                : 'Join Wander Property to save listings, receive alerts, and more.'}
             </p>
           </div>
           <button

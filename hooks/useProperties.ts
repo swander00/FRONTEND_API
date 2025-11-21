@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { apiGetWithQueryString, API_ENDPOINTS } from '@/lib/api';
 import { buildQueryString } from '@/lib/utils/buildQueryParams';
 import type { Property } from '@/types/property';
@@ -30,14 +30,42 @@ export function useProperties(options: UsePropertiesOptions = {}) {
   const [error, setError] = useState<Error | null>(null);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  
+  // Track abort controller for request cancellation
+  const abortControllerRef = useRef<AbortController | null>(null);
+  // Track the current request signature to prevent duplicate requests
+  const currentRequestRef = useRef<string>('');
 
   useEffect(() => {
     if (!enabled) {
       return;
     }
 
+    // Create a unique request signature to detect duplicate requests
+    const requestSignature = JSON.stringify({ page, pageSize, filters, sortBy, searchTerm });
+    
+    // Skip if this is the same request as the current one
+    if (currentRequestRef.current === requestSignature) {
+      return;
+    }
+
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    currentRequestRef.current = requestSignature;
+
     // Debounce requests to prevent rate limiting (429 errors)
     const timeoutId = setTimeout(() => {
+      // Check if request was cancelled during debounce
+      if (abortController.signal.aborted) {
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
@@ -61,6 +89,11 @@ export function useProperties(options: UsePropertiesOptions = {}) {
 
       apiGetWithQueryString<PropertiesResponse>(API_ENDPOINTS.properties, queryString)
       .then((data) => {
+        // Check if request was cancelled
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         // Log the raw response for debugging
         console.log('API Response:', data);
         console.log('API Response type:', typeof data);
@@ -301,6 +334,11 @@ export function useProperties(options: UsePropertiesOptions = {}) {
         setTotalPages(totalPagesNum || Math.ceil(totalCount / pageSizeNum));
       })
       .catch((err) => {
+        // Ignore errors from cancelled requests
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         // Enhanced error logging
         const errorMessage = err instanceof Error ? err.message : String(err);
         const errorDetails = err instanceof Error ? {
@@ -323,13 +361,21 @@ export function useProperties(options: UsePropertiesOptions = {}) {
         setProperties([]);
       })
       .finally(() => {
-        setLoading(false);
+        // Only update loading state if request wasn't cancelled
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
       });
     }, 300); // 300ms debounce to prevent rapid successive requests
 
     // Cleanup: cancel pending request if dependencies change
     return () => {
       clearTimeout(timeoutId);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      currentRequestRef.current = '';
     };
   }, [page, pageSize, enabled, filters, sortBy, searchTerm]);
 

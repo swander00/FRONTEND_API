@@ -267,7 +267,7 @@ export function ProfileModal({
       )}
       overlayClassName={cn(
         'transition-opacity duration-200 ease-out',
-        'z-[120]',
+        'z-[9998]',
         isClosing ? 'opacity-0' : 'opacity-100'
       )}
       size="md"

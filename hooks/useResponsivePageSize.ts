@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { useMediaQuery } from './useMediaQuery';
 
 /**
@@ -8,6 +9,8 @@ import { useMediaQuery } from './useMediaQuery';
  * - Medium (≥ 768px): 3 columns → 15 properties per page
  * - Large (≥ 1024px): 4 columns → 20 properties per page
  * - 2XL (≥ 1536px): 5 columns → 25 properties per page (only when there's enough space to prevent text wrapping)
+ * 
+ * Uses debouncing to prevent rapid changes during window resize, reducing unnecessary API calls.
  */
 export function useResponsivePageSize(): number {
   // Check breakpoints from largest to smallest (most specific first)
@@ -18,11 +21,45 @@ export function useResponsivePageSize(): number {
   const isSM = useMediaQuery('(min-width: 640px)'); // sm: 2 columns
   // Mobile (< 640px): 1 column
 
-  // Return pageSize based on largest matching breakpoint
-  if (is2XL) return 25; // 5 columns × 5 rows
-  if (isLG) return 20; // 4 columns × 5 rows
-  if (isMD) return 15; // 3 columns × 5 rows
-  if (isSM) return 10; // 2 columns × 5 rows
-  return 5; // 1 column × 5 rows (mobile)
+  // Calculate the new pageSize based on largest matching breakpoint
+  const calculatePageSize = () => {
+    if (is2XL) return 25; // 5 columns × 5 rows
+    if (isLG) return 20; // 4 columns × 5 rows
+    if (isMD) return 15; // 3 columns × 5 rows
+    if (isSM) return 10; // 2 columns × 5 rows
+    return 5; // 1 column × 5 rows (mobile)
+  };
+
+  const [pageSize, setPageSize] = useState(calculatePageSize);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const previousPageSizeRef = useRef(pageSize);
+
+  useEffect(() => {
+    const newPageSize = calculatePageSize();
+    
+    // Only update if pageSize actually changed
+    if (newPageSize === previousPageSizeRef.current) {
+      return;
+    }
+
+    // Clear any pending timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Debounce pageSize changes to prevent rapid API calls during window resize
+    timeoutRef.current = setTimeout(() => {
+      setPageSize(newPageSize);
+      previousPageSizeRef.current = newPageSize;
+    }, 500); // 500ms debounce - longer than useProperties debounce to prevent cascading requests
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [is2XL, isLG, isMD, isSM]);
+
+  return pageSize;
 }
 

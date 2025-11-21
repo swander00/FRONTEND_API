@@ -58,7 +58,7 @@ export function Features() {
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Why Choose PropertyHub?
+            Why Choose Wander Property?
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Everything you need to find your perfect home, all in one place

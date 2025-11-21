@@ -154,8 +154,12 @@ export class HttpClient {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          // Handle 429 (Too Many Requests) with retry logic
-          if (response.status === 429 && attempt < this.config.retries) {
+          // Handle retryable status codes (429, 503, 5xx)
+          const isRetryable = response.status === 429 || 
+                             response.status === 503 || 
+                             (response.status >= 500 && response.status < 600);
+          
+          if (isRetryable && attempt < this.config.retries) {
             // Check for Retry-After header
             const retryAfter = response.headers.get('Retry-After');
             let delay = this.config.retryDelay * Math.pow(2, attempt); // Exponential backoff
@@ -173,6 +177,7 @@ export class HttpClient {
             continue; // Retry the request
           }
           
+          // For non-retryable errors (4xx), throw immediately
           await this.handleErrorResponse(response);
         }
 
@@ -185,7 +190,7 @@ export class HttpClient {
       } catch (error) {
         clearTimeout(timeoutId);
 
-        // Don't retry on abort (timeout)
+        // Don't retry on abort (timeout) - these are permanent failures
         if (error instanceof Error) {
           if (error.name === 'AbortError') {
             throw new Error(`Request timeout after ${this.config.timeout}ms`);
@@ -194,14 +199,21 @@ export class HttpClient {
 
         lastError = error instanceof Error ? error : new Error(String(error));
 
-        // Retry on network errors or server errors (5xx)
-        // Note: 429 is handled above in the response.ok check
-        if (attempt < this.config.retries) {
+        // Only retry on network errors (TypeError from failed fetch, connection errors)
+        // These are transient and might succeed on retry
+        // Don't retry on other errors (syntax errors, etc.)
+        const isNetworkError = error instanceof TypeError && 
+                              (error.message.includes('fetch') || 
+                               error.message.includes('network') ||
+                               error.message.includes('Failed to fetch'));
+        
+        if (isNetworkError && attempt < this.config.retries) {
           const delay = this.config.retryDelay * Math.pow(2, attempt); // Exponential backoff
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
 
+        // For non-network errors or max retries reached, throw immediately
         throw lastError;
       }
     }
@@ -254,7 +266,7 @@ export function createHttpClient(baseUrl: string): HttpClient {
   return new HttpClient({
     baseUrl,
     timeout: 60000, // Increased to 60 seconds to handle slow database queries
-    retries: 3, // Enable retries for rate limiting (429) and server errors
+    retries: 2, // Reduced to 2 retries (3 total attempts) - only for transient errors (429, 503, 5xx, network errors)
     retryDelay: 1000, // Base delay of 1 second, will use exponential backoff
   });
 }

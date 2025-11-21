@@ -101,23 +101,23 @@ function FiltersContainerInner({
   return (
     <div className={cn('space-y-5', className)}>
       {primaryHeaderSlot ? (
-        <div className="flex flex-col gap-3 md:flex-row md:flex-nowrap md:items-center md:gap-4">
-          <div className="w-full md:w-[400px]">{primaryHeaderSlot}</div>
-          <div className="flex flex-1 items-center gap-6">
-            <div className="flex-1 md:flex-none">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+          <div className="w-full flex-shrink-0 md:w-[400px]">{primaryHeaderSlot}</div>
+          <div className="flex min-w-0 flex-1 items-center gap-4 md:gap-6">
+            <div className="min-w-0 flex-1">
               <PrimaryFilters />
             </div>
-            <div className="md:block">
+            <div className="flex-shrink-0">
               <SaveSearchButton />
             </div>
           </div>
         </div>
       ) : (
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-6">
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <PrimaryFilters />
           </div>
-          <div className="md:ml-auto">
+          <div className="flex-shrink-0 md:ml-auto">
             <SaveSearchButton />
           </div>
         </div>

@@ -15,7 +15,7 @@ export function ModalHeader({ title, onClose, description, className }: ModalHea
   return (
     <div
       className={cn(
-        'flex items-start justify-between border-b border-gray-100 px-6 pb-4 pt-5',
+        'relative z-0 flex items-start justify-between border-b border-gray-100 px-6 pb-4 pt-5',
         className,
       )}
     >
