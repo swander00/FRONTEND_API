@@ -77,11 +77,17 @@ function mapModalToContextAdvanced(state: AdvancedFiltersState): FiltersState['a
     minValue: number,
     maxValue: number,
     defaults: { min: number; max: number },
-  ) => ({
-    preset: 'Any' as const,
-    min: toNullable(minValue, defaults.min),
-    max: toNullable(maxValue, defaults.max),
-  });
+  ) => {
+    // Only convert to null if BOTH min and max are at their defaults (user hasn't touched the slider)
+    // If either value is different from default, keep the actual values (even if one matches default)
+    // This allows: min=0 (default) + max=5000 (changed) → sends min=0, max=5000
+    const bothAtDefaults = minValue === defaults.min && maxValue === defaults.max;
+    return {
+      preset: 'Any' as const,
+      min: bothAtDefaults ? null : minValue,
+      max: bothAtDefaults ? null : maxValue,
+    };
+  };
 
   const propertyClasses = state.propertyClass
     ? [state.propertyClass as FiltersState['advanced']['propertyClasses'][number]]
@@ -111,14 +117,11 @@ function mapModalToContextAdvanced(state: AdvancedFiltersState): FiltersState['a
         max: ADVANCED_MODAL_DEFAULTS.maintenanceFeesMax,
       },
     ),
-    propertyTax: buildSliderRange(
-      state.propertyTaxMin,
-      state.propertyTaxMax,
-      {
-        min: ADVANCED_MODAL_DEFAULTS.propertyTaxMin,
-        max: ADVANCED_MODAL_DEFAULTS.propertyTaxMax,
-      },
-    ),
+    propertyTax: {
+      min: toNullable(state.propertyTaxMin, ADVANCED_MODAL_DEFAULTS.propertyTaxMin),
+      max: toNullable(state.propertyTaxMax, ADVANCED_MODAL_DEFAULTS.propertyTaxMax),
+      preset: 'Any' as const,
+    },
     daysOnMarket: buildSliderRange(
       state.daysOnMarketMin,
       state.daysOnMarketMax,

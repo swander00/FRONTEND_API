@@ -76,13 +76,13 @@ export const RANGE_CONFIG: Record<
   },
   garageParking: {
     min: 0,
-    max: 5,
+    max: 6,
     step: 1,
     label: "Garage Parking",
   },
   totalParking: {
     min: 0,
-    max: 8,
+    max: 100,
     step: 1,
     label: "Total Parking",
   },

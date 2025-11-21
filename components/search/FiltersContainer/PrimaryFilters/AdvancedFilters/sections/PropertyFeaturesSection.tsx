@@ -1,5 +1,6 @@
 import React from "react";
 import type { AdvancedFiltersState } from "../state";
+import { PROPERTY_AGE_OPTIONS } from "@/lib/filters/options";
 
 type FeatureField = "propertyAge" | "hasSwimmingPool" | "waterfront";
 
@@ -23,13 +24,11 @@ export const PropertyFeaturesSection: React.FC<PropertyFeaturesSectionProps> = R
             className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-400 dark:focus:ring-blue-400/30"
           >
             <option value="">Select property age</option>
-            <option value="New">New</option>
-            <option value="0-5">0-5</option>
-            <option value="6-15">6-15</option>
-            <option value="15-25">15-25</option>
-            <option value="25-50">25-50</option>
-            <option value="50+">50+</option>
-            <option value="100+">100+</option>
+            {PROPERTY_AGE_OPTIONS.map((age) => (
+              <option key={age} value={age}>
+                {age}
+              </option>
+            ))}
           </select>
         </label>
         <label className="flex flex-col gap-2">

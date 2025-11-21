@@ -158,8 +158,8 @@ export const MAINTENANCE_FEE_RANGE = { min: 0, max: 2_000 };
 export const PROPERTY_TAX_RANGE = { min: 0, max: 20_000 };
 export const DAYS_ON_MARKET_RANGE = { min: 0, max: 365 };
 
-export const GARAGE_PARKING_RANGE = { min: 0, max: 10 };
-export const TOTAL_PARKING_RANGE = { min: 0, max: 15 };
+export const GARAGE_PARKING_RANGE = { min: 0, max: 6 };
+export const TOTAL_PARKING_RANGE = { min: 0, max: 100 };
 
 export const BASEMENT_FEATURE_OPTIONS = [
   'Apartment',
@@ -172,13 +172,14 @@ export const BASEMENT_FEATURE_OPTIONS = [
 ] as const;
 
 export const PROPERTY_AGE_OPTIONS = [
-  'Any Age',
   'New',
-  '0–5',
-  '6–15',
-  '15–25',
-  '25–50',
-  '50+',
+  '0-5',
+  '6-10',
+  '6-15',
+  '11-15',
+  '16-30',
+  '31-50',
+  '51-99',
   '100+',
 ] as const;
 

@@ -36,3 +36,4 @@ export default function WordEffect1({ string }: WordEffect1Props) {
   );
 }
 
+

@@ -283,6 +283,75 @@ export function buildQueryString(options: QueryParamsOptions): string {
     });
   }
 
+  // Lot frontage
+  if (filters.advanced?.lotFrontage && filters.advanced.lotFrontage.trim()) {
+    params.append('lotFrontage', filters.advanced.lotFrontage.trim());
+  }
+
+  // Lot depth
+  if (filters.advanced?.lotDepth && filters.advanced.lotDepth.trim()) {
+    params.append('lotDepth', filters.advanced.lotDepth.trim());
+  }
+
+  // Maintenance fee range
+  if (filters.advanced?.maintenanceFee?.min !== null && filters.advanced?.maintenanceFee?.min !== undefined) {
+    params.append('minMaintenanceFee', filters.advanced.maintenanceFee.min.toString());
+  }
+  if (filters.advanced?.maintenanceFee?.max !== null && filters.advanced?.maintenanceFee?.max !== undefined) {
+    params.append('maxMaintenanceFee', filters.advanced.maintenanceFee.max.toString());
+  }
+
+  // Property tax range
+  console.log('[buildQueryString] Property tax filter:', {
+    propertyTax: filters.advanced?.propertyTax,
+    min: filters.advanced?.propertyTax?.min,
+    max: filters.advanced?.propertyTax?.max,
+    minIsNull: filters.advanced?.propertyTax?.min === null,
+    minIsUndefined: filters.advanced?.propertyTax?.min === undefined,
+  });
+  if (filters.advanced?.propertyTax?.min !== null && filters.advanced?.propertyTax?.min !== undefined) {
+    params.append('minPropertyTax', filters.advanced.propertyTax.min.toString());
+    console.log('[buildQueryString] Added minPropertyTax:', filters.advanced.propertyTax.min.toString());
+  }
+  if (filters.advanced?.propertyTax?.max !== null && filters.advanced?.propertyTax?.max !== undefined) {
+    params.append('maxPropertyTax', filters.advanced.propertyTax.max.toString());
+    console.log('[buildQueryString] Added maxPropertyTax:', filters.advanced.propertyTax.max.toString());
+  }
+
+  // Days on market range
+  if (filters.advanced?.daysOnMarket?.min !== null && filters.advanced?.daysOnMarket?.min !== undefined) {
+    params.append('minDaysOnMarket', filters.advanced.daysOnMarket.min.toString());
+  }
+  if (filters.advanced?.daysOnMarket?.max !== null && filters.advanced?.daysOnMarket?.max !== undefined) {
+    params.append('maxDaysOnMarket', filters.advanced.daysOnMarket.max.toString());
+  }
+
+  // Basement features (multi-select array)
+  if (filters.advanced?.basementFeatures && filters.advanced.basementFeatures.length > 0) {
+    filters.advanced.basementFeatures.forEach((feature) => {
+      params.append('basementFeatures', feature);
+    });
+  }
+
+  // Property age
+  if (filters.advanced?.propertyAge && filters.advanced.propertyAge.trim()) {
+    params.append('propertyAge', filters.advanced.propertyAge.trim());
+  }
+
+  // Swimming pool (Yes/No)
+  if (filters.advanced?.swimmingPool === 'Yes') {
+    params.append('hasSwimmingPool', 'true');
+  } else if (filters.advanced?.swimmingPool === 'No') {
+    params.append('hasSwimmingPool', 'false');
+  }
+
+  // Waterfront (Yes/No)
+  if (filters.advanced?.waterfront === 'Yes') {
+    params.append('waterfront', 'true');
+  } else if (filters.advanced?.waterfront === 'No') {
+    params.append('waterfront', 'false');
+  }
+
   // Search term
   if (searchTerm && searchTerm.trim()) {
     params.append('searchTerm', searchTerm.trim());

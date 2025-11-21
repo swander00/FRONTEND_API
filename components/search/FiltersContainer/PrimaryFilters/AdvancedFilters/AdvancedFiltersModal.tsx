@@ -166,9 +166,14 @@ const AdvancedFiltersModal: React.FC<AdvancedFiltersModalProps> = ({
 
   const handleRangeChange = useCallback(
     (field: RangeField, bound: "min" | "max", value: number) => {
+      console.log(`[AdvancedFiltersModal] handleRangeChange for ${field}.${bound}:`, {
+        value,
+        type: typeof value,
+        currentState: state[field === 'propertyTax' ? 'propertyTaxMin' : field === 'maintenanceFees' ? 'maintenanceFeesMin' : 'squareFootageMin'],
+      });
       dispatch({ type: "SET_RANGE", field, bound, value });
     },
-    [],
+    [state],
   );
 
   const handleFieldChange = useCallback(
