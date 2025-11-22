@@ -16,8 +16,8 @@ export function QuickFilterList({ selected, onToggle, className }: QuickFilterLi
       <div className="pointer-events-none absolute left-0 top-0 hidden h-full w-12 bg-gradient-to-r from-white via-white to-transparent md:block" />
       <div className="pointer-events-none absolute right-0 top-0 hidden h-full w-12 bg-gradient-to-l from-white via-white to-transparent md:block" />
 
-      <div className="overflow-x-auto pb-1">
-        <div className="flex w-max items-center gap-1.5 px-1 py-2 sm:gap-2">
+      <div className="overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex w-max items-center gap-1.5 px-1 py-2 sm:gap-2 md:gap-2.5">
           {PROPERTY_TYPES.map((type) => (
             <QuickFilterChip
               key={type}

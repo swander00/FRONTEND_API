@@ -181,16 +181,16 @@ export function ActiveFiltersBar({
   }
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+    <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-gray-700">Active filters:</span>
+        <span className="text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap">Active filters:</span>
         {activeItems.map((item) => (
           <FilterTag key={item.label} label={item.label} onRemove={item.onRemove} />
         ))}
         <button
           type="button"
           onClick={onClearAll}
-          className="ml-2 text-sm font-medium text-gray-700 underline underline-offset-2 transition hover:text-gray-900"
+          className="ml-1 sm:ml-2 text-xs sm:text-sm font-medium text-gray-700 underline underline-offset-2 transition hover:text-gray-900 whitespace-nowrap"
         >
           Clear all
         </button>

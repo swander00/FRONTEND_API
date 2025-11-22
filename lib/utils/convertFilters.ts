@@ -100,6 +100,46 @@ export function convertFiltersStateToPropertyFilters(
   //   apiFilters.minTotalParking = filters.advanced.totalParking.min;
   // }
 
+  // Architectural Style (House Style) - for quick filters like '3-Storey', 'Bungalow'
+  if (filters.advanced?.houseStyle && filters.advanced.houseStyle.length > 0) {
+    apiFilters.architecturalStyle = filters.advanced.houseStyle;
+  }
+
+  // Basement Features - for quick filters like '+ Basement Apt', 'Rental Basement'
+  if (filters.advanced?.basementFeatures && filters.advanced.basementFeatures.length > 0) {
+    apiFilters.basementFeatures = filters.advanced.basementFeatures;
+  }
+
+  // Swimming Pool
+  if (filters.advanced?.swimmingPool === 'Yes') {
+    apiFilters.hasSwimmingPool = true;
+  } else if (filters.advanced?.swimmingPool === 'No') {
+    apiFilters.hasSwimmingPool = false;
+  }
+
+  // Waterfront
+  if (filters.advanced?.waterfront === 'Yes') {
+    apiFilters.waterfront = true;
+  } else if (filters.advanced?.waterfront === 'No') {
+    apiFilters.waterfront = false;
+  }
+
+  // Lot Frontage - format for backend (e.g., "50+" becomes "50+ ft")
+  if (filters.advanced?.lotFrontage) {
+    // Backend expects formats like "50+ ft" or "50+"
+    // If we have "50+", convert to "50+ ft" for consistency
+    let lotFrontage = filters.advanced.lotFrontage.trim();
+    if (lotFrontage.endsWith('+') && !lotFrontage.includes('ft')) {
+      lotFrontage = `${lotFrontage} ft`;
+    }
+    apiFilters.lotFrontage = lotFrontage;
+  }
+
+  // Property Age - for quick filters like 'Fixer-Upper'
+  if (filters.advanced?.propertyAge) {
+    apiFilters.propertyAge = filters.advanced.propertyAge;
+  }
+
   return Object.keys(apiFilters).length > 0 ? apiFilters : undefined;
 }
 

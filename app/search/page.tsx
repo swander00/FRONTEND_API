@@ -271,6 +271,7 @@ function SearchPageContent() {
   
   // Handle filters change with URL sync
   const handleFiltersChange = useCallback((filters: FiltersState) => {
+    console.log('[SearchPage] handleFiltersChange called with:', filters);
     setFiltersSnapshot(filters);
     
     // Update URL when status changes

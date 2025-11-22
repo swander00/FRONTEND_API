@@ -394,7 +394,7 @@ export function PrimaryFilters() {
   // Desktop view: all filter buttons
   return (
     <>
-      <div className="flex min-w-0 items-center gap-3 overflow-x-auto whitespace-nowrap pb-1 md:gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3 md:gap-4 overflow-x-auto whitespace-nowrap pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="flex h-12 flex-shrink-0 items-center overflow-hidden rounded-full border border-gray-300 bg-white shadow-md shadow-gray-200/50 ring-1 ring-gray-100/50 transition-all duration-200 hover:shadow-lg hover:shadow-gray-200/60 hover:ring-gray-200/60">
           <StatusButton
             ref={statusButtonRef}
