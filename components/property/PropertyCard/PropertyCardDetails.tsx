@@ -35,7 +35,7 @@ export function PropertyCardDetails({ property }: Props) {
           {property.address?.street || property.address?.unparsedAddress ? ',' : ''}
         </p>
         {(property.address?.city || property.address?.province) && (
-          <p className="text-xs md:text-sm text-gray-600 mt-0.5 truncate">
+          <p className="text-sm md:text-base text-gray-600 mt-0.5 truncate">
             {[property.address?.city, property.address?.province].filter(Boolean).join(', ')}
           </p>
         )}

@@ -46,6 +46,15 @@ const transformListingToSuggestion = (listing: PropertySuggestionResponse) => {
     ? `${listing.city}, ${listing.stateOrProvince}`
     : undefined;
 
+  // Extract street address from fullAddress (remove city if present)
+  // fullAddress might be "3331 Etude Dr, Mississauga" but we only want "3331 Etude Dr"
+  // since locationLine already shows the city separately
+  let addressLine = listing.fullAddress || '';
+  if (listing.city && addressLine.includes(listing.city)) {
+    // Remove city name from address if present
+    addressLine = addressLine.replace(new RegExp(`,\\s*${listing.city}.*$`, 'i'), '').trim();
+  }
+
   const sqftRange = listing.livingAreaMin && listing.livingAreaMax
     ? `${listing.livingAreaMin.toLocaleString()} – ${listing.livingAreaMax.toLocaleString()} sq.ft.`
     : listing.livingAreaMin
@@ -57,7 +66,7 @@ const transformListingToSuggestion = (listing: PropertySuggestionResponse) => {
   return {
     id: listing.listingKey,
     type: 'listing' as const,
-    addressLine: listing.fullAddress,
+    addressLine,
     locationLine,
     price: listing.listPrice,
     priceFormatted: formatCurrency(listing.listPrice),

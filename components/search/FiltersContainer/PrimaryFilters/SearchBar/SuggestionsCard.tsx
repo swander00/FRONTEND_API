@@ -164,6 +164,9 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
     sqftRange
   ].filter(Boolean);
 
+  // Normalize status for use in checks
+  const normalizedStatus = (mlsStatus || status || '').toLowerCase().trim();
+
   // Check if property is For Lease
   const isForLease = 
     normalizedStatus === 'for lease' || 
@@ -179,7 +182,6 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
 
   // Get status timestamp display using status prefix helper
   // Determine which timestamp to use based on status
-  const normalizedStatus = (mlsStatus || status || '').toLowerCase().trim();
   let timestamp: string | null | undefined = null;
 
   // For Sale and For Lease: use OriginalEntryTimestamp
@@ -251,19 +253,19 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
       type="button"
       onClick={handleSelect}
       className={cn(
-        'group flex w-full min-w-0 sm:min-w-[420px] items-stretch gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-white hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1',
+        'group flex w-full min-w-0 sm:min-w-[420px] items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-3 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:bg-white hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-1',
         'dark:border-slate-700 dark:bg-slate-900/80 dark:hover:border-emerald-500/60 dark:hover:bg-slate-900',
         isActive && 'border-emerald-300 bg-white shadow-md'
       )}
     >
       <div className="relative flex-shrink-0">
-        <div className="relative h-28 w-28 overflow-hidden rounded-xl bg-slate-100 shadow-inner ring-1 ring-inset ring-slate-200/60 transition duration-300 group-hover:ring-emerald-200/80 dark:bg-slate-800 dark:ring-slate-700">
+        <div className="relative h-32 w-32 overflow-hidden rounded-xl bg-slate-100 shadow-inner ring-1 ring-inset ring-slate-200/60 transition duration-300 group-hover:ring-emerald-200/80 dark:bg-slate-800 dark:ring-slate-700">
           {thumbnailUrl && thumbnailUrl.trim() ? (
             <Image
               src={thumbnailUrl}
               alt={addressLine}
               fill
-              sizes="112px"
+              sizes="128px"
               className="object-cover transition duration-300 group-hover:scale-[1.03]"
             />
           ) : (
@@ -284,9 +286,9 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
         )}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col justify-between gap-3 py-0.5">
+      <div className="flex min-w-0 flex-1 flex-col justify-between h-32 py-0.5">
         {(resolvedPriceChangeLabel || locationLine) && (
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5 text-[11px] leading-tight">
             {resolvedPriceChangeLabel && (
               <span
                 className={cn(
@@ -303,30 +305,43 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
-          <div className="flex items-start justify-between gap-3">
-            <p className="min-w-0 truncate text-base font-semibold text-slate-900 transition group-hover:text-emerald-700 dark:text-slate-100">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="min-w-0 flex-1 line-clamp-2 text-sm font-semibold leading-tight text-slate-900 transition group-hover:text-emerald-700 dark:text-slate-100">
               {addressLine}
             </p>
-            <div className="flex min-w-0 flex-col items-end">
-              <span className="text-lg font-bold text-emerald-600 transition group-hover:text-emerald-700 dark:text-emerald-400 dark:group-hover:text-emerald-300">
+            <div className="flex-shrink-0 flex flex-col items-end ml-2">
+              <span className="text-base font-bold text-emerald-600 transition group-hover:text-emerald-700 dark:text-emerald-400 dark:group-hover:text-emerald-300 whitespace-nowrap leading-tight">
                 {formattedPrice}
               </span>
             </div>
           </div>
 
           {detailParts.length > 0 && (
-            <div className="text-sm font-medium text-slate-600 dark:text-slate-300">
+            <div className="text-xs font-medium text-slate-600 dark:text-slate-300 leading-tight">
               {detailParts.join(' • ')}
             </div>
           )}
         </div>
 
-        <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between text-[11px] font-medium text-slate-500 dark:text-slate-400 leading-tight">
           <span className="truncate uppercase tracking-wide">
             {mlsNumber ?? 'MLS Pending'}
           </span>
-          <span className="text-right">{statusTimestampLabel ?? '—'}</span>
+          <div className="text-right">
+            {statusTimestampLabel ? (
+              <span>{statusTimestampLabel}</span>
+            ) : mlsStatusBadge ? (
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                  getStatusClasses(mlsStatusBadge.variant)
+                )}
+              >
+                {mlsStatusBadge.label}
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
     </button>

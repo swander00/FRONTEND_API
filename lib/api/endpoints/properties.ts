@@ -13,6 +13,7 @@ import {
   PropertiesListResponse,
   PropertyDetailsResponse,
   MapPropertiesResponse,
+  ListingHistoryResponse,
 } from '../types';
 
 export class PropertiesEndpoints {
@@ -93,6 +94,14 @@ export class PropertiesEndpoints {
     }
 
     return this.client.get<MapPropertiesResponse>('/api/properties/map', params);
+  }
+
+  /**
+   * GET /api/properties/:listingKey/listing-history
+   * Get listing history and price changes for a property
+   */
+  async getListingHistory(listingKey: string): Promise<ListingHistoryResponse> {
+    return this.client.get<ListingHistoryResponse>(`/api/properties/${encodeURIComponent(listingKey)}/listing-history`);
   }
 }
 

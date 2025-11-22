@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import type { Property } from '@/types/property';
 // Import conversion function from search page (TODO: extract to shared utility)
 import type { PropertyDetailsResponse, PropertyMediaItem } from '@/lib/api/types';
-import type { Property } from '@/types/property';
-import type { PropertyRoom } from '@/types/property';
+import type { Property, PropertyRoom } from '@/types/property';
 
 function convertPropertyDetailsToProperty(response: PropertyDetailsResponse): Property {
   const images: string[] = response.media

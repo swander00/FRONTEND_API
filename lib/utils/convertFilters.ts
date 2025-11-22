@@ -81,24 +81,24 @@ export function convertFiltersStateToPropertyFilters(
   }
 
   // Open house
-  if (filters.advanced?.hasOpenHouse === true) {
+  if (filters.advanced?.openHouse && filters.advanced.openHouse !== 'All') {
     apiFilters.hasOpenHouse = true;
   }
 
-  // Virtual tour
-  if (filters.advanced?.hasVirtualTour === true) {
-    apiFilters.hasVirtualTour = true;
-  }
+  // Virtual tour - not currently in filters
+  // if (filters.advanced?.hasVirtualTour === true) {
+  //   apiFilters.hasVirtualTour = true;
+  // }
 
   // Garage spaces
-  if (filters.advanced?.parking?.garage?.min !== null && filters.advanced?.parking?.garage?.min !== undefined) {
-    apiFilters.minGarageSpaces = filters.advanced.parking.garage.min;
+  if (filters.advanced?.garageParking?.min !== null && filters.advanced?.garageParking?.min !== undefined) {
+    apiFilters.minGarageSpaces = filters.advanced.garageParking.min;
   }
 
-  // Total parking
-  if (filters.advanced?.parking?.total?.min !== null && filters.advanced?.parking?.total?.min !== undefined) {
-    apiFilters.minTotalParking = filters.advanced.parking.total.min;
-  }
+  // Total parking - not currently in filters structure
+  // if (filters.advanced?.totalParking?.min !== null && filters.advanced?.totalParking?.min !== undefined) {
+  //   apiFilters.minTotalParking = filters.advanced.totalParking.min;
+  // }
 
   return Object.keys(apiFilters).length > 0 ? apiFilters : undefined;
 }

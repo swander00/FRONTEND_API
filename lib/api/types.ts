@@ -292,6 +292,31 @@ export interface MapPropertiesResponse {
 // SEARCH SUGGESTIONS RESPONSE
 // ===============================================================================================
 
+export interface ListingHistoryEntry {
+  dateStart: string;
+  dateEnd: string | null;
+  price: number;
+  event: string;
+  listingId: string;
+  soldPrice?: number | null;
+  closeDate?: string | null;
+}
+
+export interface PriceChangeEntry {
+  date: string;
+  price: number;
+  change: number | null;
+  previousPrice: number | null;
+  event: string;
+  listingId: string;
+}
+
+export interface ListingHistoryResponse {
+  propertyAddress: string;
+  listingHistory: ListingHistoryEntry[];
+  priceChanges: PriceChangeEntry[];
+}
+
 export interface PropertySuggestionResponse {
   listingKey: string;
   mlsNumber: string;

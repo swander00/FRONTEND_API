@@ -26,9 +26,9 @@ type PreparedSuggestion = {
 };
 
 const TYPE_PRIORITY: Record<SearchSuggestion['type'], number> = {
-  city: 0,
-  community: 1,
-  listing: 2,
+  listing: 0,  // Listings first (highest priority)
+  city: 1,      // Cities second
+  community: 2, // Communities third
 };
 
 const toSlug = (value: string) =>
@@ -116,6 +116,42 @@ const computeMatchScore = (query: string, target: string) => {
   return base + 0.5;
 };
 
+// Stricter matching for cities/communities - only match city names directly
+const computeCityMatchScore = (query: string, cityName: string) => {
+  if (!query || !cityName) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const normalizedCity = normalize(cityName);
+  const normalizedQuery = normalize(query);
+
+  // Exact match
+  if (normalizedCity === normalizedQuery) {
+    return 0;
+  }
+
+  // Prefix match (city name starts with query)
+  if (normalizedCity.startsWith(normalizedQuery)) {
+    return 0.05;
+  }
+
+  // For typos, use Levenshtein but with stricter threshold
+  // Only allow fuzzy match if query is at least 3 characters and similarity is high
+  if (normalizedQuery.length >= 3) {
+    const distance = levenshtein(normalizedQuery, normalizedCity);
+    const maxLen = Math.max(normalizedQuery.length, normalizedCity.length);
+    const similarity = 1 - (distance / maxLen);
+    
+    // Only allow fuzzy match if similarity is > 0.7 (strict threshold for typos)
+    if (similarity > 0.7) {
+      return 0.3 + (1 - similarity); // Lower score = better match
+    }
+  }
+
+  // No match
+  return Number.POSITIVE_INFINITY;
+};
+
 const formatSquareFootageRange = (squareFootage?: Property['squareFootage']) => {
   if (!squareFootage) {
     return undefined;
@@ -196,96 +232,20 @@ const prepareLocationSuggestions = (): PreparedSuggestion[] => {
   return citySuggestions;
 };
 
-// Convert API suggestion to SearchSuggestion format
-const apiSuggestionToSearchSuggestion = (suggestion: {
-  id: string;
-  type: 'listing' | 'city' | 'community';
-  addressLine?: string;
-  locationLine?: string;
-  name?: string;
-  subtitle?: string;
-  badge?: string;
-  price?: number;
-  priceFormatted?: string;
-  mlsNumber?: string;
-  mlsStatus?: string;
-  status?: string;
-  originalEntryTimestamp?: string;
-  statusDates?: {
-    purchaseContractDate?: string;
-    suspendedDate?: string;
-    terminatedDate?: string;
-    expirationDate?: string;
-    withdrawnDate?: string;
-    unavailableDate?: string;
-  };
-  beds?: number;
-  additionalBeds?: number;
-  baths?: number;
-  sqftRange?: string;
-  propertySubType?: string;
-  thumbnailUrl?: string;
-}): SearchSuggestion => {
-  if (suggestion.type === 'listing') {
-    return {
-      id: suggestion.id,
-      type: 'listing',
-      addressLine: suggestion.addressLine || '',
-      locationLine: suggestion.locationLine,
-      price: suggestion.price,
-      priceFormatted: suggestion.priceFormatted || (suggestion.price ? formatCurrency(suggestion.price) : undefined),
-      mlsNumber: suggestion.mlsNumber,
-      mlsStatus: suggestion.mlsStatus,
-      status: suggestion.status,
-      originalEntryTimestamp: suggestion.originalEntryTimestamp,
-      statusDates: suggestion.statusDates,
-      beds: suggestion.beds,
-      additionalBeds: suggestion.additionalBeds,
-      baths: suggestion.baths,
-      sqftRange: suggestion.sqftRange,
-      propertySubType: suggestion.propertySubType,
-      thumbnailUrl: suggestion.thumbnailUrl,
-    };
-  } else if (suggestion.type === 'city') {
-    return {
-      id: suggestion.id,
-      type: 'city',
-      name: suggestion.name || '',
-      subtitle: suggestion.subtitle,
-    };
-  } else {
-    return {
-      id: suggestion.id,
-      type: 'community',
-      name: suggestion.name || '',
-      badge: suggestion.badge,
-    };
-  }
-};
-
-const getBestScore = (query: string, targets: string[]) => {
-  let best = Number.POSITIVE_INFINITY;
-  for (const target of targets) {
-    const normalizedTarget = normalize(target);
-    if (!normalizedTarget) continue;
-    const score = computeMatchScore(query, normalizedTarget);
-    if (score < best) {
-      best = score;
-    }
-  }
-  return best;
-};
-
 // Local search for city suggestions (static data)
+// Cities should ONLY match when query directly matches city name (exact, prefix, or close typo)
 const findLocalSuggestions = (query: string): SearchSuggestion[] => {
   const normalizedQuery = normalize(query);
-  if (!normalizedQuery) {
+  if (!normalizedQuery || normalizedQuery.length < 2) {
     return [];
   }
 
   const citySuggestions = prepareLocationSuggestions();
-  const scored = citySuggestions.map(({ suggestion, searchTargets }) => {
-    const score = getBestScore(normalizedQuery, searchTargets);
+  const scored = citySuggestions.map(({ suggestion }) => {
+    // For cities, only match against the city name itself (not region)
+    // Use stricter matching that only allows exact, prefix, or close typo matches
+    const cityName = suggestion.type === 'city' ? suggestion.name || '' : '';
+    const score = computeCityMatchScore(normalizedQuery, cityName);
     const typeWeight = TYPE_PRIORITY[suggestion.type] * 0.05;
     return {
       suggestion,
@@ -301,11 +261,11 @@ const findLocalSuggestions = (query: string): SearchSuggestion[] => {
     return a.score - b.score;
   });
 
-  const filtered = scored.filter(
-    (entry) => entry.rawScore <= 0.65 || entry.score <= 0.75
-  );
+  // Stricter threshold: only show cities with very good matches (exact, prefix, or close typo)
+  // Threshold of 0.4 ensures we only show exact matches, prefix matches, or very close typos
+  const filtered = scored.filter((entry) => entry.rawScore <= 0.4);
 
-  return (filtered.length > 0 ? filtered : scored).slice(0, 3).map((entry) => entry.suggestion);
+  return filtered.slice(0, 3).map((entry) => entry.suggestion);
 };
 
 export function SearchBar({
@@ -389,8 +349,11 @@ export function SearchBar({
       });
     }
     
-    // Prioritize: cities first, then API suggestions
-    const combined = [...localSuggestions, ...apiSearchSuggestions].slice(0, 7);
+    // Prioritize: listings first, then cities/communities
+    // Sort by type priority to ensure correct ordering
+    const combined = [...apiSearchSuggestions, ...localSuggestions]
+      .sort((a, b) => TYPE_PRIORITY[a.type] - TYPE_PRIORITY[b.type])
+      .slice(0, 7);
     console.log('[SearchBar] Final combined suggestions:', combined);
     return combined;
   }, [trimmedValue, apiSuggestions, apiResults]);
