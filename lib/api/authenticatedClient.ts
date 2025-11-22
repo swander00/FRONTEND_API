@@ -72,8 +72,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return headers;
 }
 
-// Note: buildUrl and makeRequest are not used here - they're legacy code
-// The AuthenticatedHttpClient uses the parent HttpClient's methods
+// AuthenticatedHttpClient extends HttpClient and uses its buildUrl method
 
 /**
  * Get authenticated client instance (singleton)

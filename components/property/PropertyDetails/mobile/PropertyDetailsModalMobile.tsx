@@ -242,7 +242,16 @@ export default function PropertyDetailsModalMobile({
   };
 
   // Format helpers
-  const formatPrice = (price: number) => `$${price.toLocaleString()}`;
+  const formatPrice = (price: number, isClosePrice = false) => {
+    const basePrice = `$${price.toLocaleString()}`;
+    // Only append /month for ListPrice on For Lease properties, not for ClosePrice
+    if (isClosePrice) return basePrice;
+    // Check if property is For Lease
+    const isForLease = resolvedProperty?.transactionType === 'For Lease' || 
+                       (resolvedProperty?.status?.toLowerCase().includes('for lease') || 
+                        resolvedProperty?.mlsStatus?.toLowerCase().includes('for lease'));
+    return isForLease ? `${basePrice} /month` : basePrice;
+  };
   // Format open house info
   const formatOpenHouseInfo = () => {
     if (property.OpenHouseDetails) {
@@ -618,7 +627,7 @@ export default function PropertyDetailsModalMobile({
               <div>
                 <div className="text-[10px] text-gray-500 font-medium uppercase">Close Price</div>
                 <div className="text-sm font-semibold text-gray-900">
-                  {property.ClosePrice ? formatPrice(property.ClosePrice) : 'N/A'}
+                  {property.ClosePrice ? formatPrice(property.ClosePrice, true) : 'N/A'}
                 </div>
               </div>
               <div>

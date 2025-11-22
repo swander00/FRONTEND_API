@@ -184,9 +184,16 @@ export default function PropertyDetailsModalDesktop({ isOpen, property: rawPrope
   const hasDescription = description !== null;
 
   const handleShare = async () => {
+    // Check if property is For Lease
+    const isForLease = 
+      fullProperty?.transactionType === 'For Lease' || 
+      fullProperty?.status?.toLowerCase().includes('for lease') || 
+      fullProperty?.mlsStatus?.toLowerCase().includes('for lease');
+    
+    const priceText = `$${(property.ListPrice || 0).toLocaleString()}${isForLease ? ' /month' : ''}`;
     const shareData = {
       title: `${property.StreetAddress} - ${property.City}, ${property.StateOrProvince}`,
-      text: `Check out this ${property.PropertyType} listed at $${(property.ListPrice || 0).toLocaleString()}`,
+      text: `Check out this ${property.PropertyType} listed at ${priceText}`,
       url: window.location.href,
     };
     try {

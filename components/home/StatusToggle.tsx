@@ -1,16 +1,16 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { STATUS_OPTIONS } from '@/lib/filters/options';
+import { STATUS_COLORS, type StatusValue } from '@/lib/constants/statusColors';
 
-export type StatusValue = 'For Sale' | 'For Lease' | 'Sold' | 'Leased' | 'Removed';
+export type { StatusValue };
 
 export interface StatusToggleProps {
   value: StatusValue;
   onChange: (status: StatusValue) => void;
 }
 
-// Enhanced status configuration with solid colors
+// Status configuration using centralized colors
 const STATUSES: Array<{ 
   label: string; 
   value: StatusValue; 
@@ -20,31 +20,31 @@ const STATUSES: Array<{
   { 
     label: 'For Sale', 
     value: 'For Sale', 
-    activeBg: 'bg-blue-600',
+    activeBg: STATUS_COLORS['For Sale'].badge.split(' ')[0], // Extract bg class
     activeText: 'text-white',
   },
   { 
     label: 'For Lease', 
     value: 'For Lease', 
-    activeBg: 'bg-purple-600',
+    activeBg: STATUS_COLORS['For Lease'].badge.split(' ')[0],
     activeText: 'text-white',
   },
   { 
     label: 'Sold', 
     value: 'Sold', 
-    activeBg: 'bg-green-600',
+    activeBg: STATUS_COLORS['Sold'].badge.split(' ')[0],
     activeText: 'text-white',
   },
   { 
     label: 'Leased', 
     value: 'Leased', 
-    activeBg: 'bg-orange-600',
+    activeBg: STATUS_COLORS['Leased'].badge.split(' ')[0],
     activeText: 'text-white',
   },
   { 
     label: 'Removed', 
     value: 'Removed', 
-    activeBg: 'bg-slate-600',
+    activeBg: STATUS_COLORS['Removed'].badge.split(' ')[0],
     activeText: 'text-white',
   },
 ];

@@ -11,7 +11,7 @@ type NavbarProps = {
 
 export function Navbar({ activeTab = 'search' }: NavbarProps) {
   return (
-    <header className="relative z-[9997] bg-white/95 border-b border-gray-100 shadow-sm backdrop-blur">
+    <header className="sticky top-0 z-40 bg-white/95 border-b border-gray-100 shadow-sm backdrop-blur">
       <div className="w-full px-4 sm:px-6 lg:px-10">
         {/* Mobile Layout */}
         <div className="flex items-center justify-between gap-4 py-3 md:hidden">

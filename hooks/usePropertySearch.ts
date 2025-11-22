@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { apiGet, API_ENDPOINTS } from '@/lib/api';
+import { api } from '@/lib/api';
 import type { Property } from '@/types/property';
 import type { SearchResponse as ApiSearchResponse, PropertySuggestionResponse } from '@/lib/api/types';
 import { formatCurrency } from '@/lib/formatters';
@@ -100,10 +100,7 @@ export function usePropertySearch(options: UsePropertySearchOptions = {}) {
     setError(null);
 
     try {
-      const data = await apiGet<ApiSearchResponse>(API_ENDPOINTS.search, {
-        q: searchQuery,
-        limit,
-      });
+      const data = await api.search.suggestions(searchQuery, limit);
 
       console.log('[usePropertySearch] API response:', { 
         listingsCount: data.listings?.length || 0, 

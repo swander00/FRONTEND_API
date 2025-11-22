@@ -21,9 +21,8 @@ const nextConfig = {
     ],
   },
   eslint: {
-    // Temporarily allow builds with ESLint errors (pre-existing errors in other files)
-    // TODO: Fix all ESLint errors properly
-    ignoreDuringBuilds: true,
+    // ESLint errors will fail the build - fix errors before deploying
+    ignoreDuringBuilds: false,
   },
   typescript: {
     // Warning: This allows production builds to successfully complete even if

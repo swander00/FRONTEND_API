@@ -110,15 +110,10 @@ export const getInterestLevel = (views: number, saves: number): InterestLevel =>
   return { label: "New Listing", color: "from-blue-500 to-cyan-600" };
 };
 
-export const getStatusColor = (status: string): string => {
-  const colors: Record<string, string> = {
-    Active: "from-blue-500 via-purple-500 to-pink-500",
-    Pending: "from-amber-500 via-orange-500 to-red-500",
-    Sold: "from-slate-600 via-slate-700 to-slate-800",
-    Expired: "from-red-500 via-rose-600 to-pink-600",
-  };
+import { getStatusGradient } from '@/lib/constants/statusColors';
 
-  return colors[status] ?? "from-slate-600 via-slate-700 to-slate-800";
+export const getStatusColor = (status: string): string => {
+  return getStatusGradient(status);
 };
 
 

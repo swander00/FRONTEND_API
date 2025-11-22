@@ -61,7 +61,7 @@ const STATUS_STYLES: Record<
   new: 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200',
   conditional: 'bg-sky-100 text-sky-700 ring-1 ring-sky-200',
   'price-change': 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
-  sold: 'bg-rose-100 text-rose-700 ring-1 ring-rose-200',
+  sold: 'bg-green-100 text-green-700 ring-1 ring-green-200', // Updated to match standardized Sold color
 };
 
 const getStatusClasses = (variant?: ListingSuggestion['statusVariant']) => {
@@ -164,10 +164,18 @@ export function SuggestionsCard({ suggestion, onSelect }: SuggestionsCardProps) 
     sqftRange
   ].filter(Boolean);
 
-  const formattedPrice =
+  // Check if property is For Lease
+  const isForLease = 
+    normalizedStatus === 'for lease' || 
+    normalizedStatus.startsWith('for lease ') ||
+    (typeof listing === 'object' && 'transactionType' in listing && listing.transactionType === 'For Lease');
+  
+  const baseFormattedPrice =
     priceFormatted ??
     (typeof price === 'number' ? formatCurrency(price) : undefined) ??
     '';
+  
+  const formattedPrice = isForLease && baseFormattedPrice ? `${baseFormattedPrice} /month` : baseFormattedPrice;
 
   // Get status timestamp display using status prefix helper
   // Determine which timestamp to use based on status

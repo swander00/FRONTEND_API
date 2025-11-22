@@ -1,7 +1,8 @@
 import { Property } from '@/types/property';
 import { LocationTag } from '@/components/ui/badges/LocationTag';
-import { formatBedroomCount, formatCurrency, formatParkingSpaces, formatSquareFootageRange } from '@/lib/formatters';
+import { formatBedroomCount, formatParkingSpaces, formatSquareFootageRange } from '@/lib/formatters';
 import { getStatusTimestampDisplay } from '@/lib/utils/statusPrefix';
+import { usePropertyStatusDisplay } from '@/components/property/shared/usePropertyStatusDisplay';
 
 type Props = { property: Property };
 
@@ -9,13 +10,15 @@ export function PropertyCardDetails({ property }: Props) {
   // Use new status prefix + timestamp display logic
   // This replaces the old ListingAge calculation with status-specific prefix + timestamp
   const listedDisplay = getStatusTimestampDisplay(property);
+  // Use status display hook for consistent price formatting (includes /month for For Lease)
+  const { priceDisplay } = usePropertyStatusDisplay(property);
 
   return (
     <div className="p-4 md:p-5 min-w-0">
       {/* Top: Price + Neighborhood */}
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-xl md:text-2xl font-extrabold text-gray-900 leading-tight truncate min-w-0 flex-1">
-          {formatCurrency(property.price)}
+          {priceDisplay}
         </h3>
         {property.location?.neighborhood && (
           <LocationTag
@@ -27,8 +30,9 @@ export function PropertyCardDetails({ property }: Props) {
 
       {/* Address - Street on first row, City/Province on second row */}
       <div className="mt-1 min-w-0">
-        <p className="text-sm md:text-base font-semibold text-gray-800 truncate">
+        <p className="text-base md:text-lg font-semibold text-gray-800 truncate">
           {property.address?.street || property.address?.unparsedAddress || 'Address not available'}
+          {property.address?.street || property.address?.unparsedAddress ? ',' : ''}
         </p>
         {(property.address?.city || property.address?.province) && (
           <p className="text-xs md:text-sm text-gray-600 mt-0.5 truncate">

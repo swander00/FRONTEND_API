@@ -9,6 +9,13 @@ interface ListingHistoryCardProps {
 }
 
 export function ListingHistoryCard({ property, expanded, onToggle }: ListingHistoryCardProps) {
+  // Check if property is For Lease based on MlsStatus
+  const isForLease = property.MlsStatus?.toLowerCase().includes('for lease') || false;
+  
+  const formatPriceWithLease = (price: number): string => {
+    const basePrice = formatPrice(price);
+    return isForLease ? `${basePrice} /month` : basePrice;
+  };
   return (
     <div className="bg-gradient-to-br from-white via-slate-50/30 to-white backdrop-blur-sm rounded-2xl border border-slate-200/60 overflow-hidden">
       <div className="p-6">
@@ -42,7 +49,7 @@ export function ListingHistoryCard({ property, expanded, onToggle }: ListingHist
             </div>
             <div className="hidden md:grid grid-cols-6 gap-3 p-3 hover:bg-slate-50/30 transition-all duration-300 rounded-lg border-b border-slate-200/60">
               <div className="text-sm font-semibold text-slate-800">{property.ListDate ? formatDate(property.ListDate) : "N/A"}</div>
-              <div className="text-sm font-semibold text-slate-800">{formatPrice(property.ListPrice || 0)}</div>
+              <div className="text-sm font-semibold text-slate-800">{formatPriceWithLease(property.ListPrice || 0)}</div>
               <div className="text-sm font-semibold text-slate-800">Active</div>
               <div>
                 <span className="px-2 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-current/20">
@@ -66,7 +73,7 @@ export function ListingHistoryCard({ property, expanded, onToggle }: ListingHist
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-500 font-medium uppercase mb-0.5">List Price</div>
-                  <div className="text-sm font-semibold text-slate-800">{formatPrice(property.ListPrice || 0)}</div>
+                  <div className="text-sm font-semibold text-slate-800">{formatPriceWithLease(property.ListPrice || 0)}</div>
                 </div>
                 <div>
                   <div className="text-[10px] text-slate-500 font-medium uppercase mb-0.5">Listing End</div>

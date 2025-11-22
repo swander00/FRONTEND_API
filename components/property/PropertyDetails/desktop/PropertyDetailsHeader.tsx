@@ -57,7 +57,12 @@ export function PropertyDetailsHeader({
               </div>
             </div>
             <div className="text-left sm:text-right flex-shrink-0 w-full sm:w-auto">
-              <div className="text-2xl sm:text-3xl font-bold tracking-tight">${(property.ListPrice || 0).toLocaleString()}</div>
+              <div className="text-2xl sm:text-3xl font-bold tracking-tight">
+                ${(property.ListPrice || 0).toLocaleString()}
+                {(rawProperty.transactionType === 'For Lease' || 
+                  rawProperty.status?.toLowerCase().includes('for lease') || 
+                  rawProperty.mlsStatus?.toLowerCase().includes('for lease')) && ' /month'}
+              </div>
               <div className="text-[10px] sm:text-xs text-white/90 mt-0.5 font-medium">
                 Tax: ${(property.PropertyTaxes ?? 0).toLocaleString()} ({property.TaxYear || "N/A"})
               </div>

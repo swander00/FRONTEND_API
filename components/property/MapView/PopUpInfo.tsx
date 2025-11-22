@@ -5,6 +5,7 @@ import { formatBedroomCount, formatCurrency, formatParkingSpaces, formatSquareFo
 import { cn } from "@/lib/utils";
 import { Property } from "@/types/property";
 import { getStatusTimestampDisplay } from "@/lib/utils/statusPrefix";
+import { getStatusBadgeColor } from "@/lib/constants/statusColors";
 import Image from "next/image";
 import { KeyboardEvent } from "react";
 
@@ -20,7 +21,14 @@ interface PopUpInfoProps {
 }
 
 export function PopUpInfo({ property, address, onViewDetails }: PopUpInfoProps) {
-  const priceDisplay = formatCurrency(property.price);
+  // Check if property is For Lease
+  const isForLease = 
+    property.transactionType === 'For Lease' || 
+    property.status?.toLowerCase().includes('for lease') || 
+    property.mlsStatus?.toLowerCase().includes('for lease');
+  
+  const basePriceDisplay = formatCurrency(property.price);
+  const priceDisplay = isForLease ? `${basePriceDisplay} /month` : basePriceDisplay;
   // Use new status prefix + timestamp display logic
   const listedDisplay = getStatusTimestampDisplay(property);
   const status = property.status ?? property.mlsStatus ?? "For Sale";
@@ -132,17 +140,6 @@ function FeatureItem({ icon, value }: FeatureItemProps) {
 }
 
 function getStatusClasses(status: string) {
-  const normalized = status.toLowerCase();
-  switch (normalized) {
-    case "for sale":
-      return "bg-green-600 text-white";
-    case "sold":
-      return "bg-red-600 text-white";
-    case "pending":
-      return "bg-amber-500 text-white";
-    case "coming soon":
-      return "bg-blue-600 text-white";
-    default:
-      return "bg-slate-600 text-white";
-  }
+  // Use centralized status colors for consistency
+  return getStatusBadgeColor(status);
 }

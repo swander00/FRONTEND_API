@@ -63,8 +63,10 @@ A modern, high-performance Next.js frontend template for real estate property se
 │   ├── formatters.ts        # Currency, date formatters
 │   └── constants.ts         # App constants
 │
-└── data/                    # Mock data
-    └── mockProperties.ts
+└── data/                    # Shared data constants
+    ├── cities.ts
+    ├── propertyTypes.ts
+    └── services.ts
 ```
 
 ## Getting Started
@@ -119,7 +121,7 @@ All reusable UI components are organized by category:
 When ready to connect real data:
 
 1. Update `types/property.ts` to match your data structure
-2. Replace `data/mockProperties.ts` with API calls
+2. Use the API hooks (`useProperties`, `usePropertyDetails`, etc.) from `hooks/`
 3. Update `app/search/page.tsx` to fetch from your API
 4. Configure API endpoints in `lib/` or create an `api/` folder
 

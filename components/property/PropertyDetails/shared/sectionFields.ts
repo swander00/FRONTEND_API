@@ -56,6 +56,14 @@ const formatSquareFootageRange = (
 };
 
 export function getListingInformationFields(property: PropertyDetailsData): SectionField[] {
+  // Check if property is For Lease based on MlsStatus
+  const isForLease = property.MlsStatus?.toLowerCase().includes('for lease') || false;
+  
+  const formatPriceWithLease = (price: number): string => {
+    const basePrice = formatPrice(price);
+    return isForLease ? `${basePrice} /month` : basePrice;
+  };
+  
   return [
     {
       label: "Date Listed",
@@ -69,9 +77,9 @@ export function getListingInformationFields(property: PropertyDetailsData): Sect
     {
       label: "Original Price",
       value: property.OriginalPrice && property.OriginalPrice > 0 
-        ? formatPrice(property.OriginalPrice)
+        ? formatPriceWithLease(property.OriginalPrice)
         : property.ListPrice && property.ListPrice > 0
-          ? formatPrice(property.ListPrice)
+          ? formatPriceWithLease(property.ListPrice)
           : "N/A",
       highlight: true,
     },
