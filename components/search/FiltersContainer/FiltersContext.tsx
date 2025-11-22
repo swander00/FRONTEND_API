@@ -47,6 +47,7 @@ export type FiltersState = {
     houseStyle: string[];
     lotFrontage: string | null;
     lotDepth: string | null;
+    lotSizeAcres: NumericRange;
     maintenanceFee: SliderRange;
     propertyTax: SliderRange;
     daysOnMarket: SliderRange;
@@ -54,6 +55,7 @@ export type FiltersState = {
     totalParking: SliderRange;
     basementFeatures: string[];
     propertyAge: string | null;
+    fixerUpperKeywords: boolean | null;
     swimmingPool: YesNoOption | null;
     waterfront: YesNoOption | null;
     openHouse: OpenHouseOption;
@@ -77,6 +79,7 @@ type FiltersAction =
   | { type: 'ADVANCED_SET_HOUSE_STYLE'; payload: string[] }
   | { type: 'ADVANCED_SET_LOT_FRONTAGE'; payload: string | null }
   | { type: 'ADVANCED_SET_LOT_DEPTH'; payload: string | null }
+  | { type: 'ADVANCED_SET_LOT_SIZE_ACRES'; payload: NumericRange }
   | { type: 'ADVANCED_SET_MAINTENANCE_FEE'; payload: SliderRange }
   | { type: 'ADVANCED_SET_PROPERTY_TAX'; payload: SliderRange }
   | { type: 'ADVANCED_SET_DAYS_ON_MARKET'; payload: SliderRange }
@@ -85,6 +88,7 @@ type FiltersAction =
   | { type: 'ADVANCED_TOGGLE_BASEMENT_FEATURE'; payload: string }
   | { type: 'ADVANCED_SET_BASEMENT_FEATURES'; payload: string[] }
   | { type: 'ADVANCED_SET_PROPERTY_AGE'; payload: string | null }
+  | { type: 'ADVANCED_SET_FIXER_UPPER_KEYWORDS'; payload: boolean | null }
   | { type: 'ADVANCED_SET_SWIMMING_POOL'; payload: YesNoOption | null }
   | { type: 'ADVANCED_SET_WATERFRONT'; payload: YesNoOption | null }
   | { type: 'ADVANCED_SET_OPEN_HOUSE'; payload: OpenHouseOption }
@@ -107,6 +111,7 @@ export const DEFAULT_FILTERS_STATE: FiltersState = {
     houseStyle: [],
     lotFrontage: null,
     lotDepth: null,
+    lotSizeAcres: { min: null, max: null },
     maintenanceFee: { min: null, max: null, preset: 'Any' },
     propertyTax: { min: null, max: null, preset: 'Any' },
     daysOnMarket: { min: null, max: null, preset: 'Any' },
@@ -114,6 +119,7 @@ export const DEFAULT_FILTERS_STATE: FiltersState = {
     totalParking: { min: null, max: null, preset: 'Any' },
     basementFeatures: [],
     propertyAge: null,
+    fixerUpperKeywords: null,
     swimmingPool: null,
     waterfront: null,
     openHouse: 'All',
@@ -180,6 +186,8 @@ function filtersReducer(state: FiltersState, action: FiltersAction): FiltersStat
       return { ...state, advanced: { ...state.advanced, lotFrontage: action.payload } };
     case 'ADVANCED_SET_LOT_DEPTH':
       return { ...state, advanced: { ...state.advanced, lotDepth: action.payload } };
+    case 'ADVANCED_SET_LOT_SIZE_ACRES':
+      return { ...state, advanced: { ...state.advanced, lotSizeAcres: { ...action.payload } } };
     case 'ADVANCED_SET_MAINTENANCE_FEE':
       return { ...state, advanced: { ...state.advanced, maintenanceFee: { ...state.advanced.maintenanceFee, ...action.payload } } };
     case 'ADVANCED_SET_PROPERTY_TAX':
@@ -206,6 +214,8 @@ function filtersReducer(state: FiltersState, action: FiltersAction): FiltersStat
       return { ...state, advanced: { ...state.advanced, basementFeatures: action.payload } };
     case 'ADVANCED_SET_PROPERTY_AGE':
       return { ...state, advanced: { ...state.advanced, propertyAge: action.payload } };
+    case 'ADVANCED_SET_FIXER_UPPER_KEYWORDS':
+      return { ...state, advanced: { ...state.advanced, fixerUpperKeywords: action.payload } };
     case 'ADVANCED_SET_SWIMMING_POOL':
       return { ...state, advanced: { ...state.advanced, swimmingPool: action.payload } };
     case 'ADVANCED_SET_WATERFRONT':

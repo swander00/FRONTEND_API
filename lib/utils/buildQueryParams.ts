@@ -293,6 +293,11 @@ export function buildQueryString(options: QueryParamsOptions): string {
     params.append('lotDepth', filters.advanced.lotDepth.trim());
   }
 
+  // Lot size acres
+  if (filters.advanced?.lotSizeAcres?.min !== null && filters.advanced?.lotSizeAcres?.min !== undefined) {
+    params.append('minLotSizeAcres', filters.advanced.lotSizeAcres.min.toString());
+  }
+
   // Maintenance fee range
   if (filters.advanced?.maintenanceFee?.min !== null && filters.advanced?.maintenanceFee?.min !== undefined) {
     params.append('minMaintenanceFee', filters.advanced.maintenanceFee.min.toString());
@@ -336,6 +341,11 @@ export function buildQueryString(options: QueryParamsOptions): string {
   // Property age
   if (filters.advanced?.propertyAge && filters.advanced.propertyAge.trim()) {
     params.append('propertyAge', filters.advanced.propertyAge.trim());
+  }
+
+  // Fixer-Upper Keywords (searches PublicRemarks for fixer-upper related keywords)
+  if (filters.advanced?.fixerUpperKeywords === true) {
+    params.append('fixerUpperKeywords', 'true');
   }
 
   // Swimming pool (Yes/No)

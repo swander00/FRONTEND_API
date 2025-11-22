@@ -32,9 +32,12 @@ export type QuickFilterLabel =
  * 
  * 1. PROPERTY TYPE FILTERS (maps to PropertyType field):
  *    - 'Detached' → PropertyType = 'Detached'
- *    - 'Semi-Detached' → PropertyType = 'Semi-Detached'
- *    - 'Townhouse' → PropertyType = 'Townhouse' (database normalizes 'Att/Row/Townhouse' to 'Townhouse')
- *    - 'Condo' → PropertyType = 'Condo Apartment'
+ *    - 'Semi-Detached' → PropertyType IN ('Semi-Detached', 'Semi-Detached Condo')
+ *    - 'Townhouse' → PropertyType IN ('Townhouse', 'Condo Townhouse')
+ *    - 'Condo' → PropertyType IN ('Condo Apartment', 'Condo Townhouse', 'Co-op Apartment', 
+ *                                  'Co-Ownership Apartment', 'Common Element Condo', 
+ *                                  'Detached Condo', 'Leasehold Condo', 'Semi-Detached Condo', 
+ *                                  'Vacant Land Condo')
  *    - 'Duplex' → PropertyType = 'Duplex'
  *    - 'Cottage' → PropertyType = 'Cottage'
  * 
@@ -42,9 +45,10 @@ export type QuickFilterLabel =
  *    - '3-Storey' → ArchitecturalStyle contains '3 Storey'
  *    - 'Bungalow' → ArchitecturalStyle contains 'Bungalow'
  * 
- * 3. BASEMENT FEATURES (maps to BasementKitchen/BasementRental fields):
+ * 3. BASEMENT FEATURES (maps to BasementKitchen/UnitNumber fields):
  *    - '+ Basement Apt' → BasementKitchen = true (basement has kitchen)
- *    - 'Rental Basement' → BasementRental = true (basement has rental potential)
+ *    - 'Rental Basement' → UnitNumber matches basement patterns (bsmt, basement, walkout, etc.)
+ *      Uses comprehensive pattern matching to catch abbreviations and variations in UnitNumber field
  * 
  * 4. PROPERTY FEATURES (maps to PoolFeatures/WaterfrontYN fields):
  *    - 'Swimming Pool' → PoolFeatures IS NOT NULL
@@ -57,9 +61,10 @@ export type QuickFilterLabel =
  *    - '50ft+ Lots' → LotWidth >= 50
  *    - '2+ Acres' → LotSizeAcres >= 2 (Note: Backend may need to support this filter)
  * 
- * 7. PROPERTY CONDITION (maps to PropertyAge or condition fields):
- *    - 'Fixer-Upper' → PropertyAge might indicate older properties or condition keywords
- *      (This may need special handling - could map to PropertyAge ranges or keywords)
+ * 7. PROPERTY CONDITION (maps to PublicRemarks keywords):
+ *    - 'Fixer-Upper' → Searches PublicRemarks for keywords like 'tlc', 'as-is', 'fixer', 
+ *      'handyman', 'needs work', 'needs repair', 'needs updating', 'renovator', 
+ *      'diamond in the rough', 'great bones', 'estate sale', 'power of sale', etc.
  */
 
 export interface QuickFilterUpdate {
@@ -72,6 +77,7 @@ export interface QuickFilterUpdate {
   lotFrontage?: string | null;
   lotSizeAcres?: { min: number | null; max: number | null } | null;
   propertyAge?: string | null;
+  fixerUpperKeywords?: boolean | null;
 }
 
 /**
@@ -89,13 +95,29 @@ export function getQuickFilterUpdate(label: QuickFilterLabel, isActive: boolean)
       return { propertyTypes: ['Detached'] };
     
     case 'Semi-Detached':
-      return { propertyTypes: ['Semi-Detached'] };
+      // Include both pure semi-detached and semi-detached condos
+      // Both values exist in the database: 'Semi-Detached' and 'Semi-Detached Condo'
+      return { propertyTypes: ['Semi-Detached', 'Semi-Detached Condo'] };
     
     case 'Townhouse':
-      return { propertyTypes: ['Townhouse'] };
+      // Include regular townhouses and condo townhouses (structurally townhouse-style)
+      return { propertyTypes: ['Townhouse', 'Condo Townhouse'] };
     
     case 'Condo':
-      return { propertyTypes: ['Condo Apartment'] };
+      // Include all condo-related property types
+      return { 
+        propertyTypes: [
+          'Condo Apartment',
+          'Condo Townhouse',
+          'Co-op Apartment',
+          'Co-Ownership Apartment',
+          'Common Element Condo',
+          'Detached Condo',
+          'Leasehold Condo',
+          'Semi-Detached Condo',
+          'Vacant Land Condo'
+        ] 
+      };
     
     case 'Duplex':
       return { propertyTypes: ['Duplex'] };
@@ -105,6 +127,7 @@ export function getQuickFilterUpdate(label: QuickFilterLabel, isActive: boolean)
     
     // Architectural Style Filters
     case '3-Storey':
+      // Map to display name '3 Storey' (with space) - will be converted to raw value '3-Storey' by buildQueryParams
       return { houseStyle: ['3 Storey'] };
     
     case 'Bungalow':
@@ -115,7 +138,9 @@ export function getQuickFilterUpdate(label: QuickFilterLabel, isActive: boolean)
       return { basementFeatures: ['Kitchen: Yes'] };
     
     case 'Rental Basement':
-      return { basementFeatures: ['Apartment'] };
+      // Filter by UnitNumber patterns that indicate basement rental units
+      // This covers various abbreviations and misspellings (bsmt, basement, walkout, etc.)
+      return { basementFeatures: ['Rental Basement Unit'] };
     
     // Property Features
     case 'Swimming Pool':
@@ -137,9 +162,8 @@ export function getQuickFilterUpdate(label: QuickFilterLabel, isActive: boolean)
     
     // Property Condition
     case 'Fixer-Upper':
-      // Map to older properties (20+ years) - this is a reasonable interpretation
-      // Alternatively, could search for keywords in description
-      return { propertyAge: '20+' };
+      // Search PublicRemarks for fixer-upper related keywords
+      return { fixerUpperKeywords: true };
     
     default:
       return null;
@@ -148,7 +172,8 @@ export function getQuickFilterUpdate(label: QuickFilterLabel, isActive: boolean)
 
 /**
  * Apply quick filter updates to the current filter state
- * This merges the quick filter with existing filters
+ * Property type quick filters replace existing property types (not merge)
+ * Other filters merge with existing values
  */
 export function applyQuickFilterToState(
   currentState: FiltersState,
@@ -162,9 +187,16 @@ export function applyQuickFilterToState(
   const newState: Partial<FiltersState> = {};
   const advancedUpdates: Partial<FiltersState['advanced']> = {};
 
-  // Property Types - add to existing array
+  // Property Types - replace existing array (quick filters should show only the selected type)
+  // This ensures that when a property type quick filter (e.g., "Detached", "Semi-Detached") 
+  // is selected, only properties of that type are shown
   if (update.propertyTypes) {
-    newState.propertyTypes = [...new Set([...currentState.propertyTypes, ...update.propertyTypes])];
+    newState.propertyTypes = update.propertyTypes;
+    
+    // Clear PropertyClass filter when property type quick filter is applied
+    // This allows both freehold and condo versions to show (e.g., "Semi-Detached" and "Semi-Detached Condo")
+    // PropertyClass filter is EXCLUSIVE and would otherwise exclude one type
+    advancedUpdates.propertyClasses = [];
   }
 
   // House Style - add to existing array
@@ -200,9 +232,22 @@ export function applyQuickFilterToState(
     advancedUpdates.lotFrontage = update.lotFrontage;
   }
 
+  // Lot Size Acres - merge with existing
+  if (update.lotSizeAcres) {
+    advancedUpdates.lotSizeAcres = {
+      ...currentState.advanced.lotSizeAcres,
+      ...update.lotSizeAcres,
+    };
+  }
+
   // Property Age
   if (update.propertyAge !== undefined) {
     advancedUpdates.propertyAge = update.propertyAge;
+  }
+
+  // Fixer-Upper Keywords
+  if (update.fixerUpperKeywords !== undefined) {
+    advancedUpdates.fixerUpperKeywords = update.fixerUpperKeywords;
   }
 
   // Merge all advanced updates into a single object
@@ -228,11 +273,10 @@ export function removeQuickFilterFromState(
 
   const newState: Partial<FiltersState> = {};
 
-  // Property Types - remove from array
+  // Property Types - clear entirely when removing a property type quick filter
+  // Since property type quick filters replace (not merge), removing one should clear all
   if (update.propertyTypes) {
-    newState.propertyTypes = currentState.propertyTypes.filter(
-      (type) => !update.propertyTypes!.includes(type)
-    );
+    newState.propertyTypes = [];
   }
 
   // House Style - remove from array
@@ -290,11 +334,30 @@ export function removeQuickFilterFromState(
     };
   }
 
+  // Lot Size Acres - reset min if it was set to 2
+  if (update.lotSizeAcres?.min === 2) {
+    newState.advanced = {
+      ...currentState.advanced,
+      lotSizeAcres: {
+        ...currentState.advanced.lotSizeAcres,
+        min: null,
+      },
+    };
+  }
+
   // Property Age - reset to null
   if (update.propertyAge !== undefined) {
     newState.advanced = {
       ...currentState.advanced,
       propertyAge: null,
+    };
+  }
+
+  // Fixer-Upper Keywords - reset to null
+  if (update.fixerUpperKeywords !== undefined) {
+    newState.advanced = {
+      ...currentState.advanced,
+      fixerUpperKeywords: null,
     };
   }
 

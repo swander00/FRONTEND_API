@@ -140,6 +140,11 @@ export function convertFiltersStateToPropertyFilters(
     apiFilters.propertyAge = filters.advanced.propertyAge;
   }
 
+  // Lot Size Acres - for quick filters like '2+ Acres'
+  if (filters.advanced?.lotSizeAcres?.min !== null && filters.advanced?.lotSizeAcres?.min !== undefined) {
+    apiFilters.minLotSizeAcres = filters.advanced.lotSizeAcres.min;
+  }
+
   return Object.keys(apiFilters).length > 0 ? apiFilters : undefined;
 }
 
