@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useFiltersState,
   useFiltersDispatch,
@@ -164,8 +164,14 @@ export function PrimaryFilters() {
   const cityButtonRef = useRef<HTMLButtonElement>(null);
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
   const segmentedButtonClassName = 'first:rounded-s-full last:rounded-e-full';
+
+  // Prevent hydration mismatch by only rendering conditional UI after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const timeRangeIsActive = useMemo(
     () => filters.timeRange !== DEFAULT_FILTERS_STATE.timeRange,
     [filters.timeRange],
@@ -351,7 +357,8 @@ export function PrimaryFilters() {
   }, [timeRangeIsActive, cityIsActive, typeIsActive, priceIsActive, bedsIsActive, bathsIsActive, filters.advanced]);
 
   // Mobile view: single Filters button
-  if (isMobile) {
+  // Only render mobile view after component has mounted to prevent hydration mismatch
+  if (mounted && isMobile) {
     return (
       <>
         <button
